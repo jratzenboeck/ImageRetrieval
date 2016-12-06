@@ -7,13 +7,9 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -32,31 +28,23 @@ public class LocationService {
 
     public Location getLocationByQuery(String query) {
         String locationTitle = getLocationTitleByQuery(query);
-        if (locationTitle == null) {
-            throw new IllegalArgumentException("No location for " + query + " could be found.");
-        }
         return getLocationByUniqueTitle(locationTitle);
     }
 
     private String getLocationTitleByQuery(String query) {
-        Map<String, String> locations = readLocationsFromFile();
-        return locations.get(query);
-    }
-
-    private Map<String, String> readLocationsFromFile() {
-        Map<String, String> locations = new HashMap<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(locationCorrespondenceFile))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] lineSplit = line.split("\t");
-                locations.put(lineSplit[0], lineSplit[1]);
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println("File " + locationCorrespondenceFile + " could not be found. " + e.getMessage());
+        String locationTitle = null;
+        try {
+            locationTitle = Files
+                .lines(Paths.get(locationCorrespondenceFile))
+                .map(line -> line.split("\t"))
+                .filter(locationTuple -> locationTuple[0].equals(query))
+                .map(locationTuple -> locationTuple[1])
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No location for " + query + " could be found."));
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return locations;
+        return locationTitle;
     }
 
     private Location getLocationByUniqueTitle(String uniqueTitle) {
