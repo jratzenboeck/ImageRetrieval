@@ -15,7 +15,7 @@ public class XmlParser {
         void useObject(XmlParsable object);
     }
 
-    private static Document parseXmlDocument(String fileFullPath) throws DocumentException{
+    public static Document parseXmlDocument(String fileFullPath) throws DocumentException{
         SAXReader reader = new SAXReader();
         return reader.read(fileFullPath);
     }

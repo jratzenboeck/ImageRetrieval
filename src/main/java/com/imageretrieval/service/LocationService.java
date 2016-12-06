@@ -1,16 +1,17 @@
 package com.imageretrieval.service;
 
-import com.imageretrieval.entity.Coordinates;
 import com.imageretrieval.entity.Location;
+import com.imageretrieval.util.XmlParser;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 public class LocationService {
@@ -60,23 +61,16 @@ public class LocationService {
             Element topic = (Element) iterator.next();
             String title = topic.element("title").getStringValue();
             if (title.equals(uniqueTitle)) {
-                Coordinates coordinates = new Coordinates(topic.element("latitude").getStringValue(),
-                                                     topic.element("longitude").getStringValue());
-                Location location = new Location(title,
-                    Integer.parseInt(topic.element("number").getStringValue()),
-                    coordinates,
-                    topic.element("wiki").getStringValue());
-                return location;
+                return new Location(topic);
             }
         }
         throw new IllegalArgumentException("No location for title " + uniqueTitle + " found.");
     }
 
     private Document parseXmlDocument() {
-        SAXReader reader = new SAXReader();
         Document document = null;
         try {
-            document = reader.read(topicsFile);
+            document = XmlParser.parseXmlDocument(topicsFile);
         } catch (DocumentException e) {
             System.out.println("XML document " + topicsFile + " could not be parsed. " + e.getMessage());
         }

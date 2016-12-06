@@ -3,9 +3,10 @@ package com.imageretrieval.entity;
 import lombok.Data;
 
 import java.util.List;
+import org.dom4j.Element;
 
 @Data
-public class Location {
+public class Location extends XmlParsable {
 
     private final String queryTitle;
     private final int queryId;
@@ -18,5 +19,13 @@ public class Location {
         this.queryId = queryId;
         this.coordinates = coordinates;
         this.wikiUrl = wikiUrl;
+    }
+
+    public Location(Element topic) {
+        this(topic.element("title").getStringValue(),
+            Integer.parseInt(topic.element("number").getStringValue()),
+            new Coordinates(topic.element("latitude").getStringValue(),
+                topic.element("longitude").getStringValue()),
+            topic.element("wiki").getStringValue());
     }
 }
