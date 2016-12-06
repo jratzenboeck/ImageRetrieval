@@ -1,12 +1,19 @@
 package com.imageretrieval.service;
 
 import com.imageretrieval.entity.Location;
+import com.imageretrieval.entity.TermScores;
+import com.sun.xml.internal.xsom.impl.Ref;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Map;
+
 public class LocationServiceTest {
 
-    private final LocationService service = new LocationService("data/devset/poiNameCorrespondences.txt", "data/devset/devset_topics.xml");
+    private final LocationService service = new LocationService(
+        "data/devset/poiNameCorrespondences.txt",
+        "data/devset/desctxt/devset_textTermsPerPOI.wFolderNames.txt",
+        "data/devset/devset_topics.xml");
 
     @Test
     public void testGetLocationFromQuery() {
@@ -22,5 +29,11 @@ public class LocationServiceTest {
     @Test(expected = IllegalArgumentException.class)
     public void testGetLocationFromQueryWrongTitle() {
         service.getLocationByQuery("blabla");
+    }
+
+    @Test
+    public void testGetTextDescriptorsForLocation() {
+        Map<String, TermScores> textDescriptors = service.getTextDescriptorsForLocation("angel_of_the_north");
+        textDescriptors.keySet().stream().forEach(key -> System.out.println("Term: " + key + " Value: " + textDescriptors.get(key)));
     }
 }

@@ -1,6 +1,7 @@
 package com.imageretrieval.service;
 
 import com.imageretrieval.entity.Location;
+import com.imageretrieval.entity.TermScores;
 import com.imageretrieval.util.XmlParser;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -10,6 +11,9 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -17,10 +21,12 @@ import java.util.Map;
 public class LocationService {
 
     private final String locationCorrespondenceFile;
+    private final String locationTextDescriptorsFile;
     private final String topicsFile;
 
-    public LocationService(String locationCorrespondenceFile, String topicsFile) {
+    public LocationService(String locationCorrespondenceFile, String locationTextDescriptorsFile, String topicsFile) {
         this.locationCorrespondenceFile = locationCorrespondenceFile;
+        this.locationTextDescriptorsFile = locationTextDescriptorsFile;
         this.topicsFile = topicsFile;
     }
 
@@ -75,6 +81,30 @@ public class LocationService {
             System.out.println("XML document " + topicsFile + " could not be parsed. " + e.getMessage());
         }
         return document;
+    }
+
+    public Map<String, TermScores> getTextDescriptorsForLocation(String locationId) {
+        Map<String, TermScores> textDescriptors = new HashMap<>();
+        try {
+            String[] descriptors = Files
+                .lines(Paths.get(locationTextDescriptorsFile))
+                .filter(line -> line.split(" ")[0].equals(locationId))
+                .map(locationStr -> locationStr.split(" "))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException());
+
+            int index = 0;
+            for (; index < descriptors.length && !descriptors[index].startsWith("\""); index++);
+
+            for (int i = index; i < descriptors.length; i += 4) {
+                textDescriptors.put(descriptors[i], new TermScores(Float.parseFloat(descriptors[i + 1]),
+                    Float.parseFloat(descriptors[i + 2]),
+                    Float.parseFloat(descriptors[i + 3])));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return textDescriptors;
     }
 
 }
