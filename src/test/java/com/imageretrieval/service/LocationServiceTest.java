@@ -36,4 +36,9 @@ public class LocationServiceTest {
         Map<String, TermScores> textDescriptors = service.getTextDescriptorsForLocation("angel_of_the_north");
         textDescriptors.keySet().stream().forEach(key -> System.out.println("Term: " + key + " Value: " + textDescriptors.get(key)));
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTextDescriptorsForLocationWrongTitle() {
+        service.getTextDescriptorsForLocation("blabla");
+    }
 }
