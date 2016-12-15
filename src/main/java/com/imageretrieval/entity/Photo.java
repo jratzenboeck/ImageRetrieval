@@ -1,11 +1,11 @@
 package com.imageretrieval.entity;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.ToString;
 import org.dom4j.Element;
 
 @Data
-@AllArgsConstructor
+@ToString
 public class Photo extends XmlParsable {
 
     private String description;
@@ -18,6 +18,21 @@ public class Photo extends XmlParsable {
     private String url;
     private String userId;
     private int views;
+    private int groundTruth;
+
+    public Photo(String description, String id, Coordinates coordinates, int nbComments, int rank, String tags,
+                 String title, String url, String userId, int views) {
+        this.description = description;
+        this.id = id;
+        this.coordinates = coordinates;
+        this.nbComments = nbComments;
+        this.rank = rank;
+        this.tags = tags;
+        this.title = title;
+        this.url = url;
+        this.userId = userId;
+        this.views = views;
+    }
 
     public Photo (Element xmlElement) {
         this(xmlElement.attributeValue("description"),

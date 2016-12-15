@@ -6,7 +6,7 @@ import org.junit.Test;
 
 public class PhotoServiceTest {
 
-    private final PhotoService service = new PhotoService("data/devset/xml");
+    private final PhotoService service = new PhotoService("data/devset/xml", "data/devset/gt/rGT");
 
     @Test
     public void testGetPhotosByLocation() {
