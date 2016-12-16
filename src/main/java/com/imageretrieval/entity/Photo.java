@@ -4,6 +4,8 @@ import lombok.Data;
 import lombok.ToString;
 import org.dom4j.Element;
 
+import java.util.List;
+
 @Data
 @ToString
 public class Photo extends XmlParsable {
@@ -19,6 +21,7 @@ public class Photo extends XmlParsable {
     private String userId;
     private int views;
     private int groundTruth;
+    private List<TermScore> termScores;
 
     public Photo(String description, String id, Coordinates coordinates, int nbComments, int rank, String tags,
                  String title, String url, String userId, int views) {

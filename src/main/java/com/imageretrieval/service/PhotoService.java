@@ -1,6 +1,7 @@
 package com.imageretrieval.service;
 
 import com.imageretrieval.entity.Photo;
+import com.imageretrieval.entity.TermScore;
 import com.imageretrieval.entity.XmlParsable;
 import com.imageretrieval.util.XmlParser;
 import org.dom4j.DocumentException;
@@ -12,12 +13,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PhotoService {
+public class PhotoService extends AbstractService {
 
     private final String xmlFolderPath;
     private final String rGroundTruthFolderPath;
 
-    public PhotoService(String xmlFolderPath, String rGroundTruthFolderPath) {
+    public PhotoService(String photoTextDescriptorsFile, String xmlFolderPath, String rGroundTruthFolderPath) {
+        super(photoTextDescriptorsFile);
         this.xmlFolderPath = xmlFolderPath;
         this.rGroundTruthFolderPath = rGroundTruthFolderPath;
     }
@@ -47,6 +49,13 @@ public class PhotoService {
         }
     }
 
+    @Override
+    protected double calculateAdvancedTfIdf(double termFrequency, double documentFrequency, int numberOfDocuments) {
+//        return super.calculateAdvancedTfIdf(termFrequency, documentFrequency, numberOfDocuments);
+        // Do not use the default calculation in this case
+        return Math.abs((1 + Math.log10(termFrequency)) * Math.log10(numberOfDocuments / documentFrequency));
+    }
+
     private int getGroundTruthValueForPhoto(String locationId, String photoId) {
         String fullGroundTruthPath = rGroundTruthFolderPath + "/" + locationId + " rGT.txt";
 
@@ -61,4 +70,5 @@ public class PhotoService {
             throw new IllegalArgumentException();
         }
     }
+
 }

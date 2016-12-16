@@ -1,8 +1,7 @@
 package com.imageretrieval.service;
 
 import com.imageretrieval.entity.Location;
-import com.imageretrieval.entity.TermScores;
-import com.sun.xml.internal.xsom.impl.Ref;
+import com.imageretrieval.entity.TermScore;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -33,12 +32,16 @@ public class LocationServiceTest {
 
     @Test
     public void testGetTextDescriptorsForLocation() {
-        Map<String, TermScores> textDescriptors = service.getTextDescriptorsForLocation("angel_of_the_north");
-        textDescriptors.keySet().stream().forEach(key -> System.out.println("Term: " + key + " Value: " + textDescriptors.get(key)));
+        Map<String, TermScore> textDescriptors = service.getTextDescriptorsForEntity("angel_of_the_north");
+        textDescriptors
+            .keySet()
+            .stream()
+            .forEach(key ->
+                System.out.println("Term: " + key + " Value: " + textDescriptors.get(key).getTfIdf()));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testGetTextDescriptorsForLocationWrongTitle() {
-        service.getTextDescriptorsForLocation("blabla");
+        service.getTextDescriptorsForEntity("blabla");
     }
 }
