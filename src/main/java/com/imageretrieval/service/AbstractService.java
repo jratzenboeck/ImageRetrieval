@@ -17,7 +17,7 @@ public abstract class AbstractService {
 
     private final String textDescriptorsFile;
     private final Set<String> stopWords;
-    private final String pathToStopWordsFile = "data/devset/stopwords/stopwords.txt";
+    private final String pathToStopWordsFile = "stopwords/stopwords.txt";
 
     protected AbstractService(String textDescriptorsFile) {
         this.textDescriptorsFile = textDescriptorsFile;
