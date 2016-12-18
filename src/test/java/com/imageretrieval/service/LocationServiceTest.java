@@ -44,4 +44,9 @@ public class LocationServiceTest {
     public void testGetTextDescriptorsForLocationWrongTitle() {
         service.getTextDescriptorsForEntity("blabla");
     }
+
+    @Test
+    public void testGetAllLocationTitles() {
+        Assert.assertEquals(30, service.getAllLocationTitles().size());
+    }
 }

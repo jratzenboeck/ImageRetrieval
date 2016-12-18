@@ -1,7 +1,6 @@
 package com.imageretrieval.service;
 
 import com.imageretrieval.entity.Location;
-import com.imageretrieval.entity.TermScore;
 import com.imageretrieval.util.XmlParser;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -10,7 +9,11 @@ import org.dom4j.Element;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class LocationService extends AbstractService {
 
@@ -23,6 +26,17 @@ public class LocationService extends AbstractService {
         this.topicsFile = topicsFile;
     }
 
+    public List<String> getAllLocationTitles() {
+        try (Stream<String> lines = Files.lines(Paths.get(locationCorrespondenceFile))) {
+            return lines
+                .map(line -> line.split("\t")[1])
+                .collect(Collectors.toList());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new ArrayList<>();
+    }
+
     public Location getLocationByQuery(String query) {
         String locationTitle = getLocationTitleByQuery(query);
         return getLocationByUniqueTitle(locationTitle);
@@ -30,9 +44,8 @@ public class LocationService extends AbstractService {
 
     private String getLocationTitleByQuery(String query) {
         String locationTitle = null;
-        try {
-            locationTitle = Files
-                .lines(Paths.get(locationCorrespondenceFile))
+        try (Stream<String> lines = Files.lines(Paths.get(locationCorrespondenceFile))) {
+            locationTitle = lines
                 .map(line -> line.split("\t"))
                 .filter(locationTuple -> locationTuple[0].equals(query))
                 .map(locationTuple -> locationTuple[1])

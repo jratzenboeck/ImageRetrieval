@@ -1,7 +1,6 @@
 package com.imageretrieval.service;
 
 import com.imageretrieval.entity.Photo;
-import com.imageretrieval.entity.TermScore;
 import com.imageretrieval.entity.XmlParsable;
 import com.imageretrieval.util.XmlParser;
 import org.dom4j.DocumentException;
@@ -12,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class PhotoService extends AbstractService {
 
@@ -45,7 +45,7 @@ public class PhotoService extends AbstractService {
             });
             return photoList;
         } catch (DocumentException ex) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("XML processing failed for location title " + locationId);
         }
     }
 
@@ -59,15 +59,14 @@ public class PhotoService extends AbstractService {
     private int getGroundTruthValueForPhoto(String locationId, String photoId) {
         String fullGroundTruthPath = rGroundTruthFolderPath + "/" + locationId + " rGT.txt";
 
-        try {
-            return Files
-                .lines(Paths.get(fullGroundTruthPath))
+        try (Stream<String> lines = Files.lines(Paths.get(fullGroundTruthPath))) {
+            return lines
                 .filter(line -> line.split(",")[0].equals(photoId))
                 .map(photoLine -> Integer.parseInt(photoLine.split(",")[1]))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("There is no ground truth for photo " + photoId + " in location " + locationId));
         } catch (IOException e) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Getting ground truth value failed for photo " + photoId + " for location " + locationId);
         }
     }
 

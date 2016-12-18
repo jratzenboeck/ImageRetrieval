@@ -23,7 +23,25 @@ public class TextDescriptorsService {
         this.locationService = locationService;
     }
 
-    public void writePhotoTextDescriptorsToCSVFile(String filename, String locationId) {
+    public void writePhotoTextDescriptorsForAllLocations(String pathToFolder) {
+        locationService.getAllLocationTitles().stream()
+            .forEach(locationTitle -> {
+                String filename = pathToFolder + "/" + locationTitle;
+                writePhotoTextDescriptorsToCSVFile(filename + ".csv", locationTitle);
+                System.out.println("CSV file written for location " + locationTitle);
+                convertCSVToArffFile(filename + ".csv", filename + ".arff");
+                System.out.println("ARFF file written for location " + locationTitle);
+            });
+    }
+
+    public void writePhotoTextDescriptorsForOneLocation(String pathToFolder, String locationId) {
+        String filename = pathToFolder + "/" + locationId;
+        String csvFile = filename + ".csv";
+        writePhotoTextDescriptorsToCSVFile(csvFile, locationId);
+        convertCSVToArffFile(csvFile, filename + ".arff");
+    }
+
+    private void writePhotoTextDescriptorsToCSVFile(String filename, String locationId) {
         Map<String, TermScore> locationTermScores = locationService.getTextDescriptorsForEntity(locationId);
         List<Photo> photos = getPhotosWithExpandedTfIdfVector(locationId);
         try {
@@ -31,9 +49,9 @@ public class TextDescriptorsService {
 
             StringBuilder sbHeader = new StringBuilder();
             sbHeader.append("id,");
-            locationTermScores.keySet().stream().forEach(x -> {
-                sbHeader.append(x + ",");
-            });
+            locationTermScores.keySet()
+                .stream()
+                .forEach(header -> sbHeader.append(header + ","));
             sbHeader.append("groundTruth\n");
             printWriter.write(sbHeader.toString());
 
@@ -56,7 +74,7 @@ public class TextDescriptorsService {
         }
     }
 
-    public void convertCSVToArffFile(String csvFile, String arffFile) {
+    private void convertCSVToArffFile(String csvFile, String arffFile) {
         CSVLoader csvLoader = new CSVLoader();
         try {
             csvLoader.setSource(new File(csvFile));
@@ -91,7 +109,7 @@ public class TextDescriptorsService {
             TermScore photoTermScore = photoTermScores.get(term);
             if (photoTermScore != null) {
                 photoTermScore.setTfIdf(photoService.calculateAdvancedTfIdf(photoTermScore.getTermFrequency(),
-                                        photoTermScore.getDocumentFrequency(), numberOfPhotos));
+                    photoTermScore.getDocumentFrequency(), numberOfPhotos));
                 tfIdfVector.add(photoTermScore);
             } else {
                 tfIdfVector.add(new TermScore(term));
