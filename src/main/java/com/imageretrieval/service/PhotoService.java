@@ -10,18 +10,22 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class PhotoService extends AbstractService {
 
     private final String xmlFolderPath;
     private final String rGroundTruthFolderPath;
+    private final String colorNamesPath;
 
-    public PhotoService(String photoTextDescriptorsFile, String xmlFolderPath, String rGroundTruthFolderPath) {
+    public PhotoService(String photoTextDescriptorsFile, String xmlFolderPath, String rGroundTruthFolderPath, String colorNamesPath) {
         super(photoTextDescriptorsFile);
         this.xmlFolderPath = xmlFolderPath;
         this.rGroundTruthFolderPath = rGroundTruthFolderPath;
+        this.colorNamesPath = colorNamesPath;
     }
 
     public List<Photo> getPhotosByLocation(String locationId) {
@@ -68,6 +72,28 @@ public class PhotoService extends AbstractService {
         } catch (IOException e) {
             throw new IllegalArgumentException("Getting ground truth value failed for photo " + photoId + " for location " + locationId);
         }
+    }
+
+    public Map<String, List<Double>> getColorNamesForPhotos(String locationId) {
+        String filename = colorNamesPath + "/" + locationId + " CN.csv";
+
+        Map<String, List<Double>> photosWithColorNames = new HashMap<>();
+
+        try (Stream<String> lines = Files.lines(Paths.get(filename))) {
+            lines
+                .map(line -> line.split(","))
+                .forEach(descriptors -> {
+                    List<Double> colorNameValues = new ArrayList<>();
+                    for (int i = 1; i < descriptors.length; i++) {
+                        colorNameValues.add(Double.parseDouble(descriptors[i]));
+                    }
+                    photosWithColorNames.put(descriptors[0], colorNameValues);
+                });
+
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Getting color names for location " + locationId + " failed");
+        }
+        return photosWithColorNames;
     }
 
 }

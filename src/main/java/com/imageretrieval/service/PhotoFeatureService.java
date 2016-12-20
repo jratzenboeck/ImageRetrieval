@@ -13,37 +13,38 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class TextDescriptorsService {
+public class PhotoFeatureService {
 
     private final PhotoService photoService;
     private final LocationService locationService;
+    private static final String[] COLOR_NAMES = new String[] {"cnn_black", "cnn_blue", "cnn_brown", "cnn_grey", "cnn_green", "cnn_orange", "cnn_pink", "cnn_purple", "cnn_red", "cnn_white", "cnn_yellow"};
 
-    public TextDescriptorsService(PhotoService photoService, LocationService locationService) {
+    public PhotoFeatureService(PhotoService photoService, LocationService locationService) {
         this.photoService = photoService;
         this.locationService = locationService;
     }
 
-    public void writePhotoTextDescriptorsForAllLocations(String pathToFolder) {
+    public void writePhotoFeaturesForAllLocations(String pathToFolder) {
         locationService.getAllLocationTitles().stream()
             .forEach(locationTitle -> {
                 String filename = pathToFolder + "/" + locationTitle;
-                writePhotoTextDescriptorsToCSVFile(filename + ".csv", locationTitle);
+                writePhotoFeaturesToCSVFile(filename + ".csv", locationTitle);
                 System.out.println("CSV file written for location " + locationTitle);
                 convertCSVToArffFile(filename + ".csv", filename + ".arff");
                 System.out.println("ARFF file written for location " + locationTitle);
             });
     }
 
-    public void writePhotoTextDescriptorsForOneLocation(String pathToFolder, String locationId) {
+    public void writePhotoFeaturesForOneLocation(String pathToFolder, String locationId) {
         String filename = pathToFolder + "/" + locationId;
         String csvFile = filename + ".csv";
-        writePhotoTextDescriptorsToCSVFile(csvFile, locationId);
+        writePhotoFeaturesToCSVFile(csvFile, locationId);
         convertCSVToArffFile(csvFile, filename + ".arff");
     }
 
-    private void writePhotoTextDescriptorsToCSVFile(String filename, String locationId) {
+    private void writePhotoFeaturesToCSVFile(String filename, String locationId) {
         Map<String, TermScore> locationTermScores = locationService.getTextDescriptorsForEntity(locationId);
-        List<Photo> photos = getPhotosWithExpandedTfIdfVector(locationId);
+        List<Photo> photos = getPhotosExpandedWithFeatures(locationId);
         try {
             PrintWriter printWriter = new PrintWriter(new File(filename));
 
@@ -52,16 +53,15 @@ public class TextDescriptorsService {
             locationTermScores.keySet()
                 .stream()
                 .forEach(header -> sbHeader.append(header + ","));
+            for (String colorName : COLOR_NAMES) {
+                sbHeader.append(colorName + ",");
+            }
             sbHeader.append("groundTruth\n");
             printWriter.write(sbHeader.toString());
 
             for (int i = 0; i < photos.size(); i++) {
                 Photo photo = photos.get(i);
-                StringBuilder sb = new StringBuilder();
-                sb.append(photo.getId());
-                sb.append(',');
-                photo.getTermScores().stream().map(x -> x.getTfIdf()).forEach(x -> sb.append(x + ","));
-                sb.append(photo.getGroundTruth());
+                StringBuilder sb = writeFeaturesOfPhotoToCSVFile(photo);
 
                 printWriter.write(sb.toString());
                 if (i < photos.size() - 1) {
@@ -72,6 +72,16 @@ public class TextDescriptorsService {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+    }
+
+    private StringBuilder writeFeaturesOfPhotoToCSVFile(Photo photo) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(photo.getId());
+        sb.append(',');
+        photo.getTermScores().stream().map(x -> x.getTfIdf()).forEach(x -> sb.append(x + ","));
+        photo.getColorNames().stream().forEach(x -> sb.append(x + ","));
+        sb.append(photo.getGroundTruth());
+        return sb;
     }
 
     private void convertCSVToArffFile(String csvFile, String arffFile) {
@@ -90,12 +100,14 @@ public class TextDescriptorsService {
         }
     }
 
-    private List<Photo> getPhotosWithExpandedTfIdfVector(String locationId) {
+    private List<Photo> getPhotosExpandedWithFeatures(String locationId) {
         List<Photo> photos = photoService.getPhotosByLocation(locationId);
+        Map<String, List<Double>> colorNamesForPhotos = photoService.getColorNamesForPhotos(locationId);
 
         for (Photo photo : photos) {
             List<TermScore> tfIdfVector = getTermScoresForPhoto(locationId, photo.getId(), photos.size());
             photo.setTermScores(tfIdfVector);
+            photo.setColorNames(colorNamesForPhotos.get(photo.getId()));
         }
         return photos;
     }
@@ -117,5 +129,4 @@ public class TextDescriptorsService {
         }
         return tfIdfVector;
     }
-
 }
