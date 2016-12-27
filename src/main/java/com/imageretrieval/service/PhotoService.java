@@ -75,25 +75,33 @@ public class PhotoService extends AbstractService {
     }
 
     public Map<String, List<Double>> getColorNamesForPhotos(String locationId) {
-        String filename = colorNamesPath + "/" + locationId + " CN.csv";
+        return getVisualDescriptorForPhotos(locationId, "CN");
+    }
 
-        Map<String, List<Double>> photosWithColorNames = new HashMap<>();
+    public Map<String, List<Double>> getColorMomentsHSVForPhotos(String locationId) {
+        return getVisualDescriptorForPhotos(locationId, "CM");
+    }
+
+    private Map<String, List<Double>> getVisualDescriptorForPhotos(String locationId, String visualDescriptorExtension) {
+        String filename = colorNamesPath + "/" + locationId + " " + visualDescriptorExtension + ".csv";
+
+        Map<String, List<Double>> photosWithVisualDescriptor = new HashMap<>();
 
         try (Stream<String> lines = Files.lines(Paths.get(filename))) {
             lines
                 .map(line -> line.split(","))
                 .forEach(descriptors -> {
-                    List<Double> colorNameValues = new ArrayList<>();
+                    List<Double> visualDescriptorValues = new ArrayList<>();
                     for (int i = 1; i < descriptors.length; i++) {
-                        colorNameValues.add(Double.parseDouble(descriptors[i]));
+                        visualDescriptorValues.add(Double.parseDouble(descriptors[i]));
                     }
-                    photosWithColorNames.put(descriptors[0], colorNameValues);
+                    photosWithVisualDescriptor.put(descriptors[0], visualDescriptorValues);
                 });
 
         } catch (IOException e) {
             throw new IllegalArgumentException("Getting color names for location " + locationId + " failed");
         }
-        return photosWithColorNames;
+        return photosWithVisualDescriptor;
     }
 
 }

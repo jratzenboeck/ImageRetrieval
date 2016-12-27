@@ -23,6 +23,7 @@ public class Photo extends XmlParsable {
     private int groundTruth;
     private List<TermScore> termScores;
     private List<Double> colorNames;
+    private List<Double> colorMomentsHSV;
 
     public Photo(String description, String id, Coordinates coordinates, int nbComments, int rank, String tags,
                  String title, String url, String userId, int views) {

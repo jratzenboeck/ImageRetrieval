@@ -17,7 +17,6 @@ public class PhotoFeatureService {
 
     private final PhotoService photoService;
     private final LocationService locationService;
-    private static final String[] COLOR_NAMES = new String[] {"cnn_black", "cnn_blue", "cnn_brown", "cnn_grey", "cnn_green", "cnn_orange", "cnn_pink", "cnn_purple", "cnn_red", "cnn_white", "cnn_yellow"};
 
     public PhotoFeatureService(PhotoService photoService, LocationService locationService) {
         this.photoService = photoService;
@@ -48,15 +47,7 @@ public class PhotoFeatureService {
         try {
             PrintWriter printWriter = new PrintWriter(new File(filename));
 
-            StringBuilder sbHeader = new StringBuilder();
-            sbHeader.append("id,");
-            locationTermScores.keySet()
-                .stream()
-                .forEach(header -> sbHeader.append(header + ","));
-            for (String colorName : COLOR_NAMES) {
-                sbHeader.append(colorName + ",");
-            }
-            sbHeader.append("groundTruth\n");
+            StringBuilder sbHeader = writeHeaders(locationTermScores);
             printWriter.write(sbHeader.toString());
 
             for (int i = 0; i < photos.size(); i++) {
@@ -74,12 +65,29 @@ public class PhotoFeatureService {
         }
     }
 
+    private StringBuilder writeHeaders(Map<String, TermScore> locationTermScores) {
+        StringBuilder sbHeader = new StringBuilder();
+        sbHeader.append("id,");
+        locationTermScores.keySet()
+            .stream()
+            .forEach(header -> sbHeader.append(header + ","));
+        for (int i = 0; i < 11; i++) {
+            sbHeader.append("cnn" + i + ",");
+        }
+        for (int i = 0; i < 9; i++) {
+            sbHeader.append("cm" + i + ",");
+        }
+        sbHeader.append("groundTruth\n");
+        return sbHeader;
+    }
+
     private StringBuilder writeFeaturesOfPhotoToCSVFile(Photo photo) {
         StringBuilder sb = new StringBuilder();
         sb.append(photo.getId());
         sb.append(',');
         photo.getTermScores().stream().map(x -> x.getTfIdf()).forEach(x -> sb.append(x + ","));
         photo.getColorNames().stream().forEach(x -> sb.append(x + ","));
+        photo.getColorMomentsHSV().stream().forEach(x -> sb.append(x + ","));
         sb.append(photo.getGroundTruth());
         return sb;
     }
@@ -103,11 +111,13 @@ public class PhotoFeatureService {
     private List<Photo> getPhotosExpandedWithFeatures(String locationId) {
         List<Photo> photos = photoService.getPhotosByLocation(locationId);
         Map<String, List<Double>> colorNamesForPhotos = photoService.getColorNamesForPhotos(locationId);
+        Map<String, List<Double>> colorMomentsHSVForPhotos = photoService.getColorMomentsHSVForPhotos(locationId);
 
         for (Photo photo : photos) {
             List<TermScore> tfIdfVector = getTermScoresForPhoto(locationId, photo.getId(), photos.size());
             photo.setTermScores(tfIdfVector);
             photo.setColorNames(colorNamesForPhotos.get(photo.getId()));
+            photo.setColorMomentsHSV(colorMomentsHSVForPhotos.get(photo.getId()));
         }
         return photos;
     }
