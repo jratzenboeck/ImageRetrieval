@@ -24,6 +24,9 @@ public class Photo extends XmlParsable {
     private List<TermScore> termScores;
     private List<Double> colorNames;
     private List<Double> colorMomentsHSV;
+    private List<Double> colorStructureDescriptors;
+    private List<Double> lbp;
+    private List<Double> hog;
 
     public Photo(String description, String id, Coordinates coordinates, int nbComments, int rank, String tags,
                  String title, String url, String userId, int views) {

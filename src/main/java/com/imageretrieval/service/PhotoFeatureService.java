@@ -77,6 +77,15 @@ public class PhotoFeatureService {
         for (int i = 0; i < 9; i++) {
             sbHeader.append("cm" + i + ",");
         }
+        for (int i = 0; i < 64; i++) {
+            sbHeader.append("csd" + i + ",");
+        }
+        for (int i = 0; i < 16; i++) {
+            sbHeader.append("lbp" + i + ",");
+        }
+        for (int i = 0; i < 81; i++) {
+            sbHeader.append("hog" + i + ",");
+        }
         sbHeader.append("groundTruth\n");
         return sbHeader;
     }
@@ -88,6 +97,9 @@ public class PhotoFeatureService {
         photo.getTermScores().stream().map(x -> x.getTfIdf()).forEach(x -> sb.append(x + ","));
         photo.getColorNames().stream().forEach(x -> sb.append(x + ","));
         photo.getColorMomentsHSV().stream().forEach(x -> sb.append(x + ","));
+        photo.getColorStructureDescriptors().stream().forEach(x -> sb.append(x + ","));
+        photo.getLbp().stream().forEach(x -> sb.append(x + ","));
+        photo.getHog().stream().forEach(x -> sb.append(x + ","));
         sb.append(photo.getGroundTruth());
         return sb;
     }
@@ -112,12 +124,18 @@ public class PhotoFeatureService {
         List<Photo> photos = photoService.getPhotosByLocation(locationId);
         Map<String, List<Double>> colorNamesForPhotos = photoService.getColorNamesForPhotos(locationId);
         Map<String, List<Double>> colorMomentsHSVForPhotos = photoService.getColorMomentsHSVForPhotos(locationId);
+        Map<String, List<Double>> colorStructureDescriptorsForPhotos = photoService.getColorStructureDescriptorsForPhotos(locationId);
+        Map<String, List<Double>> lbpForPhotos = photoService.getLBPForPhotos(locationId);
+        Map<String, List<Double>> hogForPhotos = photoService.getHOGForPhotos(locationId);
 
         for (Photo photo : photos) {
             List<TermScore> tfIdfVector = getTermScoresForPhoto(locationId, photo.getId(), photos.size());
             photo.setTermScores(tfIdfVector);
             photo.setColorNames(colorNamesForPhotos.get(photo.getId()));
             photo.setColorMomentsHSV(colorMomentsHSVForPhotos.get(photo.getId()));
+            photo.setColorStructureDescriptors(colorStructureDescriptorsForPhotos.get(photo.getId()));
+            photo.setLbp(lbpForPhotos.get(photo.getId()));
+            photo.setHog(hogForPhotos.get(photo.getId()));
         }
         return photos;
     }

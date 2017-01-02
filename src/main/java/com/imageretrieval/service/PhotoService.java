@@ -82,6 +82,18 @@ public class PhotoService extends AbstractService {
         return getVisualDescriptorForPhotos(locationId, "CM");
     }
 
+    public Map<String, List<Double>> getColorStructureDescriptorsForPhotos(String locationId) {
+        return getVisualDescriptorForPhotos(locationId, "CSD");
+    }
+
+    public Map<String, List<Double>> getLBPForPhotos(String locationId) {
+        return getVisualDescriptorForPhotos(locationId, "LBP");
+    }
+
+    public Map<String, List<Double>> getHOGForPhotos(String locationId) {
+        return getVisualDescriptorForPhotos(locationId, "HOG");
+    }
+
     private Map<String, List<Double>> getVisualDescriptorForPhotos(String locationId, String visualDescriptorExtension) {
         String filename = colorNamesPath + "/" + locationId + " " + visualDescriptorExtension + ".csv";
 
