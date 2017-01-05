@@ -16,8 +16,8 @@ public class TermScore {
 
     public TermScore(String term) {
         this.term = term;
-        this.termFrequency = 0.0f;
-        this.documentFrequency = 0.0f;
-        this.tfIdf = 0.0f;
+        this.termFrequency = 0.0;
+        this.documentFrequency = 0.0;
+        this.tfIdf = 0.0;
     }
 }

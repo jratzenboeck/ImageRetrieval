@@ -2,6 +2,8 @@ package com.imageretrieval.service;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+
 public class PhotoFeatureServiceTest {
 
     private final PhotoService photoService = new PhotoService(
@@ -16,13 +18,41 @@ public class PhotoFeatureServiceTest {
     private final PhotoFeatureService photoFeatureService =
         new PhotoFeatureService(photoService, locationService);
 
+    private final String[] features = new String[] { "txt", "cnn", "cm", "csd", "lbp", "hog" };
+
     @Test
-    public void testWritePhotoFeaturesForAllLocations() {
-        photoFeatureService.writePhotoFeaturesForAllLocations("data/devset/features");
+    public void testWriteSingleFeaturesForAllLocations() {
+        Arrays.stream(features).forEach(featureName -> {
+            photoFeatureService.writePhotoFeaturesForAllLocations("data/devset/features", new String[] {featureName});
+        });
     }
 
     @Test
-    public void testWritePhotoFeaturesForOneLocation() {
-        photoFeatureService.writePhotoFeaturesForOneLocation("data/devset/featuresOneLocation", "angel_of_the_north");
+    public void testWriteFeatureCombinationForAllLocations() {
+        photoFeatureService.writePhotoFeaturesForAllLocations("data/devset/features", features);
+    }
+
+    @Test
+    public void testWriteTxtCnnForAllLocations() {
+        String[] features = new String[] { "txt", "cnn" };
+        photoFeatureService.writePhotoFeaturesForAllLocations("data/devset/features", features);
+    }
+
+    @Test
+    public void testWriteTxtCnnCmmForAllLocations() {
+        String[] features = new String[] { "txt", "cnn", "cmm" };
+        photoFeatureService.writePhotoFeaturesForAllLocations("data/devset/features", features);
+    }
+
+    @Test
+    public void testWriteTxtCmForAllLocations() {
+        String[] features = new String[] { "txt", "cm" };
+        photoFeatureService.writePhotoFeaturesForAllLocations("data/devset/features", features);
+    }
+
+    @Test
+    public void testWriteColorMomentsFeatureForOneLocation() {
+        String[] features = new String[] { "cm" };
+        photoFeatureService.writePhotoFeaturesForOneLocation("data/devset/featuresOneLocation", "acropolis_athens", features);
     }
 }

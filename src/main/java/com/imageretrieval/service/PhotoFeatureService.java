@@ -9,9 +9,7 @@ import weka.core.converters.CSVLoader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PhotoFeatureService {
 
@@ -23,36 +21,40 @@ public class PhotoFeatureService {
         this.locationService = locationService;
     }
 
-    public void writePhotoFeaturesForAllLocations(String pathToFolder) {
-        locationService.getAllLocationTitles().stream()
+    public void writePhotoFeaturesForAllLocations(String pathToFolder, String[] features) {
+        locationService.getAllLocationTitles()
             .forEach(locationTitle -> {
-                String filename = pathToFolder + "/" + locationTitle;
-                writePhotoFeaturesToCSVFile(filename + ".csv", locationTitle);
-                System.out.println("CSV file written for location " + locationTitle);
-                convertCSVToArffFile(filename + ".csv", filename + ".arff");
+                writePhotoFeaturesForOneLocation(pathToFolder, locationTitle, features);
                 System.out.println("ARFF file written for location " + locationTitle);
             });
     }
 
-    public void writePhotoFeaturesForOneLocation(String pathToFolder, String locationId) {
-        String filename = pathToFolder + "/" + locationId;
+    public void writePhotoFeaturesForOneLocation(String pathToFolder, String locationId, String[] features) {
+        StringBuilder filename = new StringBuilder();
+        filename.append(pathToFolder + "/");
+        Arrays.stream(features).forEach(featureName -> filename.append(featureName));
+        filename.append("/");
+        filename.append(locationId);
+        Arrays.stream(features).forEach(featureName -> filename.append("_" + featureName));
+
         String csvFile = filename + ".csv";
-        writePhotoFeaturesToCSVFile(csvFile, locationId);
+        writePhotoFeaturesToCSVFile(csvFile, locationId, features);
         convertCSVToArffFile(csvFile, filename + ".arff");
     }
 
-    private void writePhotoFeaturesToCSVFile(String filename, String locationId) {
+    private void writePhotoFeaturesToCSVFile(String filename, String locationId, String[] features) {
         Map<String, TermScore> locationTermScores = locationService.getTextDescriptorsForEntity(locationId);
         List<Photo> photos = getPhotosExpandedWithFeatures(locationId);
+
         try {
             PrintWriter printWriter = new PrintWriter(new File(filename));
 
-            StringBuilder sbHeader = writeHeaders(locationTermScores);
+            StringBuilder sbHeader = writeHeadersToStringBuilder(locationTermScores, features);
             printWriter.write(sbHeader.toString());
 
             for (int i = 0; i < photos.size(); i++) {
                 Photo photo = photos.get(i);
-                StringBuilder sb = writeFeaturesOfPhotoToCSVFile(photo);
+                StringBuilder sb = writeFeaturesOfPhotoToStringBuilder(photo, features);
 
                 printWriter.write(sb.toString());
                 if (i < photos.size() - 1) {
@@ -65,41 +67,63 @@ public class PhotoFeatureService {
         }
     }
 
-    private StringBuilder writeHeaders(Map<String, TermScore> locationTermScores) {
+    private StringBuilder writeHeadersToStringBuilder(Map<String, TermScore> locationTermScores, String[] features) {
+        Map<String, Integer> visualFeatureMap = getVisualFeatureDetails();
+
         StringBuilder sbHeader = new StringBuilder();
         sbHeader.append("id,");
-        locationTermScores.keySet()
-            .stream()
-            .forEach(header -> sbHeader.append(header + ","));
-        for (int i = 0; i < 11; i++) {
-            sbHeader.append("cnn" + i + ",");
-        }
-        for (int i = 0; i < 9; i++) {
-            sbHeader.append("cm" + i + ",");
-        }
-        for (int i = 0; i < 64; i++) {
-            sbHeader.append("csd" + i + ",");
-        }
-        for (int i = 0; i < 16; i++) {
-            sbHeader.append("lbp" + i + ",");
-        }
-        for (int i = 0; i < 81; i++) {
-            sbHeader.append("hog" + i + ",");
+
+        for (String featureName : features) {
+            if (featureName.equals("txt")) {
+                locationTermScores.keySet()
+                    .forEach(header -> sbHeader.append(header + ","));
+            }
+            Integer featureSize = visualFeatureMap.get(featureName);
+            if (featureSize != null) {
+                appendFeatureHeader(sbHeader, featureName, featureSize);
+            }
         }
         sbHeader.append("groundTruth\n");
         return sbHeader;
     }
 
-    private StringBuilder writeFeaturesOfPhotoToCSVFile(Photo photo) {
+    private Map<String, Integer> getVisualFeatureDetails() {
+        Map<String, Integer> featureMap = new HashMap<>();
+        featureMap.put("cnn", 11);
+        featureMap.put("cm", 9);
+        featureMap.put("csd", 64);
+        featureMap.put("lbp", 16);
+        featureMap.put("hog", 81);
+        return featureMap;
+    }
+
+    private StringBuilder appendFeatureHeader(StringBuilder sb, String featureName, int featureSize) {
+        for (int i = 0; i < featureSize; i++) {
+            sb.append(featureName + i + ",");
+        }
+        return sb;
+    }
+
+    private StringBuilder writeFeaturesOfPhotoToStringBuilder(Photo photo, String[] features) {
         StringBuilder sb = new StringBuilder();
         sb.append(photo.getId());
         sb.append(',');
-        photo.getTermScores().stream().map(x -> x.getTfIdf()).forEach(x -> sb.append(x + ","));
-        photo.getColorNames().stream().forEach(x -> sb.append(x + ","));
-        photo.getColorMomentsHSV().stream().forEach(x -> sb.append(x + ","));
-        photo.getColorStructureDescriptors().stream().forEach(x -> sb.append(x + ","));
-        photo.getLbp().stream().forEach(x -> sb.append(x + ","));
-        photo.getHog().stream().forEach(x -> sb.append(x + ","));
+
+        for (String featureName : features) {
+            if (featureName.equals("txt"))
+                photo.getTermScores().stream().map(TermScore::getTfIdf).forEach(x -> sb.append(x + ","));
+            if (featureName.equals("cnn"))
+                photo.getColorNames().forEach(x -> sb.append(x + ","));
+            if (featureName.equals("cm"))
+                photo.getColorMomentsHSV().forEach(x -> sb.append(x + ","));
+            if (featureName.equals("csd"))
+                photo.getColorStructureDescriptors().forEach(x -> sb.append(x + ","));
+            if (featureName.equals("lbp"))
+                photo.getLbp().forEach(x -> sb.append(x + ","));
+            if (featureName.equals("hog"))
+                photo.getHog().forEach(x -> sb.append(x + ","));
+        }
+
         sb.append(photo.getGroundTruth());
         return sb;
     }
