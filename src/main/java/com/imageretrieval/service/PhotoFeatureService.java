@@ -2,9 +2,7 @@ package com.imageretrieval.service;
 
 import com.imageretrieval.entity.Photo;
 import com.imageretrieval.entity.TermScore;
-import weka.core.Instances;
-import weka.core.converters.ArffSaver;
-import weka.core.converters.CSVLoader;
+import com.imageretrieval.util.FileUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -32,14 +30,14 @@ public class PhotoFeatureService {
     public void writePhotoFeaturesForOneLocation(String pathToFolder, String locationId, String[] features) {
         StringBuilder filename = new StringBuilder();
         filename.append(pathToFolder + "/");
-        Arrays.stream(features).forEach(featureName -> filename.append(featureName));
+        Arrays.stream(features).forEach(filename::append);
         filename.append("/");
         filename.append(locationId);
         Arrays.stream(features).forEach(featureName -> filename.append("_" + featureName));
 
         String csvFile = filename + ".csv";
         writePhotoFeaturesToCSVFile(csvFile, locationId, features);
-        convertCSVToArffFile(csvFile, filename + ".arff");
+        FileUtils.convertCSVToArffFile(csvFile, filename + ".arff", "first");
     }
 
     private void writePhotoFeaturesToCSVFile(String filename, String locationId, String[] features) {
@@ -126,22 +124,6 @@ public class PhotoFeatureService {
 
         sb.append(photo.getGroundTruth());
         return sb;
-    }
-
-    private void convertCSVToArffFile(String csvFile, String arffFile) {
-        CSVLoader csvLoader = new CSVLoader();
-        try {
-            csvLoader.setSource(new File(csvFile));
-            csvLoader.setNominalAttributes("last");
-            Instances data = csvLoader.getDataSet();
-
-            ArffSaver arffSaver = new ArffSaver();
-            arffSaver.setInstances(data);
-            arffSaver.setFile(new File(arffFile));
-            arffSaver.writeBatch();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private List<Photo> getPhotosExpandedWithFeatures(String locationId) {

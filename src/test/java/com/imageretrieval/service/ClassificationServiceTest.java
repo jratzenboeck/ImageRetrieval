@@ -30,6 +30,16 @@ public class ClassificationServiceTest {
 
     private final String[] features = new String[] { "txt", "cnn", "cm", "csd", "lbp", "hog" };
 
+    private final ClassificationService classificationServiceAllFeatures =
+        new ClassificationService("data/devset/features",
+            "data/devset/classificationResults",
+            locationService);
+
+    private final ClassificationService classificationServiceOneFeature =
+        new ClassificationService("data/devset/featuresOneLocation",
+            "data/devset/classificationResults",
+            locationService);
+
     @Before
     public void initialize() {
         classifiers.add(new J48());
@@ -49,32 +59,51 @@ public class ClassificationServiceTest {
     public void testClassifyAllLocationsForAllFeatures() {
         List<Classifier> classifiers = new ArrayList<>();
         classifiers.add(new J48());
-        ClassificationService classificationService =
-            new ClassificationService("data/devset/features",
-                "data/devset/classificationResults",
-                locationService);
+
         Arrays.stream(features).forEach(featureName -> {
-            classificationService.classifyAllLocations(new String[] {featureName}, classifiers);
+            classificationServiceAllFeatures.classifyAllLocations(new String[] {featureName}, classifiers);
         });
     }
 
     @Test
-    public void testClassifyAllLocations() {
+    public void testClassifyAllLocationsForTxt() {
         String[] features = {"txt"};
-        ClassificationService classificationService =
-            new ClassificationService("data/devset/features",
-                "data/devset/classificationResults",
-                locationService);
-        classificationService.classifyAllLocations(features, classifiers);
+
+        classificationServiceAllFeatures.classifyAllLocations(features, classifiers);
+    }
+
+    @Test
+    public void testClassifyAllLocationsForCm() {
+        String[] features = {"cm"};
+
+        classificationServiceAllFeatures.classifyAllLocations(features, classifiers);
     }
 
     @Test
     public void testClassifyLocation() {
-        String[] features = {"txt"};
-        ClassificationService classificationService =
-            new ClassificationService("data/devset/featuresOneLocation",
-                "data/devset/classificationResults",
-                locationService);
-        classificationService.classifyLocation("acropolis_athens", features, classifiers);
+        String[] features = {"cm"};
+
+        classificationServiceOneFeature.classifyLocation("acropolis_athens", features, classifiers);
+    }
+
+    @Test
+    public void testMakePredictionsForCmForLocation() {
+        String[] features = {"cm"};
+        List<String[]> featureSets = new ArrayList<>();
+        featureSets.add(features);
+
+        classificationServiceOneFeature.makePredictionsForLocation("data/devset/predictions", "acropolis_athens", featureSets, classifiers.get(9));
+    }
+
+    @Test
+    public void testMakePredictionsForTxtForLocation() {
+        String[] txt = {"txt"};
+        String[] cm = {"cm"};
+
+        List<String[]> featureSets = new ArrayList<>();
+        featureSets.add(txt);
+        featureSets.add(cm);
+
+        classificationServiceOneFeature.makePredictionsForLocation("data/devset/predictions", "acropolis_athens", featureSets, classifiers.get(9));
     }
 }

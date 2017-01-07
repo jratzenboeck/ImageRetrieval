@@ -39,20 +39,44 @@ public class PhotoFeatureServiceTest {
     }
 
     @Test
-    public void testWriteTxtCnnCmmForAllLocations() {
-        String[] features = new String[] { "txt", "cnn", "cmm" };
+    public void testWriteTxtCnnCmForAllLocations() {
+        String[] features = new String[] { "txt", "cnn", "cm" };
         photoFeatureService.writePhotoFeaturesForAllLocations("data/devset/features", features);
     }
 
     @Test
     public void testWriteTxtCmForAllLocations() {
-        String[] features = new String[] { "txt", "cm" };
+        String[] features = new String[]{"txt", "cm"};
+        photoFeatureService.writePhotoFeaturesForAllLocations("data/devset/features", features);
+    }
+
+    @Test
+    public void testWriteVisualDescriptorsForAllLocations() {
+        String[] features = new String[] { "cnn", "cm", "csd", "lbp", "hog" };
+        photoFeatureService.writePhotoFeaturesForAllLocations("data/devset/features", features);
+    }
+
+    @Test
+    public void testWriteCnnCmCsdLbpForAllLocations() {
+        String[] features = new String[] { "cnn", "cm", "csd", "lbp" };
+        photoFeatureService.writePhotoFeaturesForAllLocations("data/devset/features", features);
+    }
+
+    @Test
+    public void testWriteCnnCmForAllLocations() {
+        String[] features = new String[] { "cnn", "cm" };
         photoFeatureService.writePhotoFeaturesForAllLocations("data/devset/features", features);
     }
 
     @Test
     public void testWriteColorMomentsFeatureForOneLocation() {
         String[] features = new String[] { "cm" };
+        photoFeatureService.writePhotoFeaturesForOneLocation("data/devset/featuresOneLocation", "acropolis_athens", features);
+    }
+
+    @Test
+    public void testWriteTextFeatureForOneLocation() {
+        String[] features = new String[] { "txt" };
         photoFeatureService.writePhotoFeaturesForOneLocation("data/devset/featuresOneLocation", "acropolis_athens", features);
     }
 }
