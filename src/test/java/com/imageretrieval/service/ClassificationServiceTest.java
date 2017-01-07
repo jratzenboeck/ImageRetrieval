@@ -96,7 +96,7 @@ public class ClassificationServiceTest {
     }
 
     @Test
-    public void testMakePredictionsForTxtForLocation() {
+    public void testMakePredictionsForTxtCmForLocation() {
         String[] txt = {"txt"};
         String[] cm = {"cm"};
 
@@ -105,5 +105,41 @@ public class ClassificationServiceTest {
         featureSets.add(cm);
 
         classificationServiceOneFeature.makePredictionsForLocation("data/devset/predictions", "acropolis_athens", featureSets, classifiers.get(9));
+    }
+
+    @Test
+    public void testMakePredictionsForTxtCmForAllLocations() {
+        String[] txt = {"txt"};
+        String[] cm = {"cm"};
+
+        List<String[]> featureSets = new ArrayList<>();
+        featureSets.add(txt);
+        featureSets.add(cm);
+
+        classificationServiceAllFeatures.makePredictionsForAllLocations("data/devset/predictions", featureSets, classifiers.get(9));
+    }
+
+    @Test
+    public void testMakePredictionsForVisualAndTextDescriprotsForAllLocations() {
+        String[] txt = {"txt"};
+        String[] cm = {"cnn", "cm", "csd", "lbp", "hog"};
+
+        List<String[]> featureSets = new ArrayList<>();
+        featureSets.add(txt);
+        featureSets.add(cm);
+
+        classificationServiceAllFeatures.makePredictionsForAllLocations("data/devset/predictions", featureSets, classifiers.get(9));
+    }
+
+    @Test
+    public void testMakePredictionsForTxtCnnCmCsdLbpForAllLocations() {
+        String[] txt = {"txt"};
+        String[] cm = {"cnn", "cm", "csd", "lbp"};
+
+        List<String[]> featureSets = new ArrayList<>();
+        featureSets.add(txt);
+        featureSets.add(cm);
+
+        classificationServiceAllFeatures.makePredictionsForAllLocations("data/devset/predictions", featureSets, classifiers.get(9));
     }
 }

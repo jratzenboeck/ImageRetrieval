@@ -3,11 +3,11 @@ package com.imageretrieval.service;
 import com.imageretrieval.util.FileUtils;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
+import weka.classifiers.meta.FilteredClassifier;
 import weka.core.FastVector;
 import weka.core.Instances;
 import weka.core.converters.ArffLoader;
-import weka.filters.Filter;
-import weka.filters.unsupervised.attribute.RemoveType;
+import weka.filters.unsupervised.attribute.Remove;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -27,6 +27,7 @@ public class ClassificationService {
         this.locationService = locationService;
     }
 
+    @Deprecated
     public void classifyAllLocations(String[] features, List<Classifier> classifiers) {
         locationService
             .getAllLocationTitles()
@@ -35,6 +36,7 @@ public class ClassificationService {
             });
     }
 
+    @Deprecated
     public void classifyLocation(String locationId, String[] features, List<Classifier> classifiers) {
         final Instances instances = getInstancesFromArffFile(locationId, features);
         final String filenameToResults = getFileNameForLocation(pathToClassificationFolder, locationId, features, ".txt");
@@ -45,17 +47,27 @@ public class ClassificationService {
             for (Classifier classifier : classifiers) {
                 Evaluation results = classifyInstances(classifier, instances);
                 if (results != null) {
-                    writeEvaluationResultsToFile(filenameToResults, classifier, results);
+//                    writeEvaluationResultsToFile(filenameToResults, classifier, results);
                     if (bestResults == null || results.pctCorrect() > bestResults.pctCorrect()) {
                         bestResults = results;
                         bestClassifier = classifier;
                     }
                 }
             }
-            writeBestEvaluationResultsForLocationToFile(
-                getFileNameForBestResults(pathToClassificationFolder, features, "_best.txt"),
-                locationId, bestClassifier, bestResults);
+            for (int i = 0; i < bestResults.predictions().size(); i++)
+                System.out.println(bestResults.predictions().elementAt(i));
+//            writeBestEvaluationResultsForLocationToFile(
+//                getFileNameForBestResults(pathToClassificationFolder, features, "_best.txt"),
+//                locationId, bestClassifier, bestResults);
         }
+    }
+
+    public void makePredictionsForAllLocations(String pathToPredictionsFolder, List<String[]> featureSets, Classifier classifier) {
+        locationService
+            .getAllLocationTitles()
+            .forEach(locationId -> {
+                makePredictionsForLocation(pathToPredictionsFolder, locationId, featureSets, classifier);
+            });
     }
 
     public void makePredictionsForLocation(String pathToPredictionsFolder, String locationId, List<String[]> featureSets, Classifier classifier) {
@@ -104,6 +116,7 @@ public class ClassificationService {
         return sb.toString();
     }
 
+    @Deprecated
     private String getFileNameForBestResults(String pathToFolder, String[] features, String fileExtension) {
         return getFileNameForLocation(pathToFolder, "", features, fileExtension);
     }
@@ -139,11 +152,6 @@ public class ClassificationService {
             ArffLoader.ArffReader arffReader = new ArffLoader.ArffReader(reader);
             data = arffReader.getData();
             data.setClassIndex(data.numAttributes() - 1);
-
-            RemoveType remove = new RemoveType();                         // new instance of filter
-            remove.setInputFormat(data);                          // inform filter about dataset **AFTER** setting options
-
-            data = Filter.useFilter(data, remove);
         } catch (FileNotFoundException e) {
             System.out.println("File " + filename.toString() + " could not be found. " + e.getMessage());
         } catch (IOException e) {
@@ -156,9 +164,21 @@ public class ClassificationService {
 
     private Evaluation classifyInstances(Classifier classifier, Instances instances) {
         try {
-            classifier.buildClassifier(instances);
+            Remove rm = new Remove();
+            rm.setAttributeIndices("1");  // remove 1st attribute
+//            String[] options = new String[2];
+//            options[0] = "-p";
+//            options[1] = "1";
+
+            FilteredClassifier fc = new FilteredClassifier();
+            fc.setFilter(rm);
+            fc.setClassifier(classifier);
+//            fc.setOptions(options);
+            fc.buildClassifier(instances);
+
             final Evaluation evaluation = new Evaluation(instances);
-            evaluation.crossValidateModel(classifier, instances, 10, new Random(1));
+            evaluation.crossValidateModel(fc, instances, 10, new Random(1));
+
             return evaluation;
         } catch (Exception e) {
             System.out.println("Classifier " + classifier.toString()
@@ -175,6 +195,7 @@ public class ClassificationService {
         }
     }
 
+    @Deprecated
     private void writeEvaluationResultsToFile(String filename, Classifier classifier, Evaluation evaluation) {
         try (PrintWriter pw = new PrintWriter(new FileOutputStream(new File(filename), true))) {
             pw.append("Classifier: " + classifier.getClass().getSimpleName() + "\n");
@@ -185,6 +206,7 @@ public class ClassificationService {
         }
     }
 
+    @Deprecated
     private void writeBestEvaluationResultsForLocationToFile(String filename, String locationId, Classifier classifier, Evaluation evaluation) {
         try (PrintWriter pw = new PrintWriter(new FileOutputStream(new File(filename), true))) {
             pw.append(evaluation.toSummaryString("\nBest classifier "
