@@ -81,7 +81,7 @@ public class PhotoFeatureService {
                 appendFeatureHeader(sbHeader, featureName, featureSize);
             }
         }
-        sbHeader.append("groundTruth\n");
+        sbHeader.append("divGroundTruth\n");
         return sbHeader;
     }
 
@@ -122,7 +122,7 @@ public class PhotoFeatureService {
                 photo.getHog().forEach(x -> sb.append(x + ","));
         }
 
-        sb.append(photo.getGroundTruth());
+        sb.append(photo.getDivGroundTruth());
         return sb;
     }
 

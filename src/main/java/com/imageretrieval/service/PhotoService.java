@@ -19,12 +19,14 @@ public class PhotoService extends AbstractService {
 
     private final String xmlFolderPath;
     private final String rGroundTruthFolderPath;
+    private final String dGroundTruthFolderPath;
     private final String colorNamesPath;
 
-    public PhotoService(String photoTextDescriptorsFile, String xmlFolderPath, String rGroundTruthFolderPath, String colorNamesPath) {
+    public PhotoService(String photoTextDescriptorsFile, String xmlFolderPath, String rGroundTruthFolderPath, String dGroundTruthFolderPath, String colorNamesPath) {
         super(photoTextDescriptorsFile);
         this.xmlFolderPath = xmlFolderPath;
         this.rGroundTruthFolderPath = rGroundTruthFolderPath;
+        this.dGroundTruthFolderPath = dGroundTruthFolderPath;
         this.colorNamesPath = colorNamesPath;
     }
 
@@ -38,7 +40,8 @@ public class PhotoService extends AbstractService {
                 @Override
                 public XmlParsable buildObject(Element xmlElement) {
                     Photo photo = new Photo(xmlElement);
-                    photo.setGroundTruth(getGroundTruthValueForPhoto(locationId, photo.getId()));
+                    photo.setRelGroundTruth(getRelGroundTruthValueForPhoto(locationId, photo.getId()));
+                    photo.setDivGroundTruth(getDivGroundTruthValueForPhoto(locationId, photo.getId()));
                     return photo;
                 }
 
@@ -60,18 +63,26 @@ public class PhotoService extends AbstractService {
         return Math.abs((1 + Math.log10(termFrequency)) * Math.log10(numberOfDocuments / documentFrequency));
     }
 
-    private int getGroundTruthValueForPhoto(String locationId, String photoId) {
-        String fullGroundTruthPath = rGroundTruthFolderPath + "/" + locationId + " rGT.txt";
+    private int getGroundTruthForPhoto (String locationId, String photoId, String folderPath, String ending) {
+        String fullGroundTruthPath = folderPath + "/" + locationId + ending;
 
         try (Stream<String> lines = Files.lines(Paths.get(fullGroundTruthPath))) {
             return lines
                 .filter(line -> line.split(",")[0].equals(photoId))
                 .map(photoLine -> Integer.parseInt(photoLine.split(",")[1]))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("There is no ground truth for photo " + photoId + " in location " + locationId));
+                .orElse(0);
         } catch (IOException e) {
             throw new IllegalArgumentException("Getting ground truth value failed for photo " + photoId + " for location " + locationId);
         }
+    }
+
+    private int getRelGroundTruthValueForPhoto(String locationId, String photoId) {
+        return getGroundTruthForPhoto(locationId, photoId, rGroundTruthFolderPath, " rGT.txt");
+    }
+
+    private int getDivGroundTruthValueForPhoto(String locationId, String photoId) {
+        return getGroundTruthForPhoto(locationId, photoId, dGroundTruthFolderPath, " dGT.txt");
     }
 
     public Map<String, List<Double>> getColorNamesForPhotos(String locationId) {

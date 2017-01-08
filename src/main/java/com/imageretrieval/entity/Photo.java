@@ -20,7 +20,8 @@ public class Photo extends XmlParsable {
     private String url;
     private String userId;
     private int views;
-    private int groundTruth;
+    private int relGroundTruth;
+    private int divGroundTruth;
     private List<TermScore> termScores;
     private List<Double> colorNames;
     private List<Double> colorMomentsHSV;

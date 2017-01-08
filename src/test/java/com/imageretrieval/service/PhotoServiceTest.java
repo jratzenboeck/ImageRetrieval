@@ -11,7 +11,7 @@ public class PhotoServiceTest {
 
     private final PhotoService service = new PhotoService("data/devset/desctxt/devset_textTermsPerImage.txt",
         "data/devset/xml",
-        "data/devset/gt/rGT", "data/devset/");
+        "data/devset/gt/rGT", "data/devset/gt/dGT","data/devset/");
 
     @Test
     public void testGetPhotosByLocation() {

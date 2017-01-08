@@ -9,7 +9,7 @@ public class PhotoFeatureServiceTest {
     private final PhotoService photoService = new PhotoService(
         "data/devset/desctxt/devset_textTermsPerImage.txt",
         "data/devset/xml",
-        "data/devset/gt/rGT", "data/devset/descvis/img");
+        "data/devset/gt/rGT", "data/devset/gt/dGT", "data/devset/descvis/img");
     private final LocationService locationService = new LocationService(
         "data/devset/poiNameCorrespondences.txt",
         "data/devset/desctxt/devset_textTermsPerPOI.wFolderNames.txt",
