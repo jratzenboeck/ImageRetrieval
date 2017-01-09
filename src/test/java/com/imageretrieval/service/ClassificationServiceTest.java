@@ -15,9 +15,7 @@ import weka.classifiers.meta.Vote;
 import weka.classifiers.trees.J48;
 import weka.classifiers.trees.RandomForest;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class ClassificationServiceTest {
 
@@ -92,19 +90,30 @@ public class ClassificationServiceTest {
         List<String[]> featureSets = new ArrayList<>();
         featureSets.add(features);
 
-        classificationServiceOneFeature.makePredictionsForLocation("data/devset/predictions", "acropolis_athens", featureSets, classifiers.get(9));
+        Map<String[], Classifier> classifierForFeatures = new HashMap<>();
+        classifierForFeatures.put(features, classifiers.get(9));
+
+        classificationServiceOneFeature
+            .makePredictionsForLocation("data/devset/predictions", "acropolis_athens",
+                featureSets, classifierForFeatures);
     }
 
     @Test
     public void testMakePredictionsForTxtCmForLocation() {
         String[] txt = {"txt"};
-        String[] cm = {"cm"};
+        String[] cnn = {"cnn"};
 
         List<String[]> featureSets = new ArrayList<>();
         featureSets.add(txt);
-        featureSets.add(cm);
+        featureSets.add(cnn);
 
-        classificationServiceOneFeature.makePredictionsForLocation("data/devset/predictions", "acropolis_athens", featureSets, classifiers.get(9));
+        Map<String[], Classifier> classifierForFeatures = new HashMap<>();
+        classifierForFeatures.put(txt, classifiers.get(9));
+        classifierForFeatures.put(cnn, classifiers.get(9));
+
+        classificationServiceOneFeature
+            .makePredictionsForLocation("data/devset/predictions", "acropolis_athens",
+                featureSets, classifierForFeatures);
     }
 
     @Test
@@ -116,30 +125,62 @@ public class ClassificationServiceTest {
         featureSets.add(txt);
         featureSets.add(cm);
 
-        classificationServiceAllFeatures.makePredictionsForAllLocations("data/devset/predictions", featureSets, classifiers.get(9));
+        Map<String[], Classifier> classifierForFeatures = new HashMap<>();
+        classifierForFeatures.put(txt, classifiers.get(9));
+        classifierForFeatures.put(cm, classifiers.get(9));
+
+        classificationServiceAllFeatures
+            .makePredictionsForAllLocations("data/devset/predictions",
+                featureSets, classifierForFeatures);
     }
 
     @Test
     public void testMakePredictionsForVisualAndTextDescriprotsForAllLocations() {
         String[] txt = {"txt"};
-        String[] cm = {"cnn", "cm", "csd", "lbp", "hog"};
+        String[] visual = {"cnn", "cm", "csd", "lbp", "hog"};
 
         List<String[]> featureSets = new ArrayList<>();
         featureSets.add(txt);
-        featureSets.add(cm);
+        featureSets.add(visual);
 
-        classificationServiceAllFeatures.makePredictionsForAllLocations("data/devset/predictions", featureSets, classifiers.get(9));
+        Map<String[], Classifier> classifierForFeatures = new HashMap<>();
+        classifierForFeatures.put(txt, classifiers.get(9));
+        classifierForFeatures.put(visual, classifiers.get(9));
+
+        classificationServiceAllFeatures
+            .makePredictionsForAllLocations("data/devset/predictions",
+                featureSets, classifierForFeatures);
     }
 
     @Test
     public void testMakePredictionsForTxtCnnCmCsdLbpForAllLocations() {
         String[] txt = {"txt"};
-        String[] cm = {"cnn", "cm", "csd", "lbp"};
+        String[] visual = {"cnn", "cm", "csd", "lbp"};
 
         List<String[]> featureSets = new ArrayList<>();
         featureSets.add(txt);
-        featureSets.add(cm);
+        featureSets.add(visual);
 
-        classificationServiceAllFeatures.makePredictionsForAllLocations("data/devset/predictions", featureSets, classifiers.get(9));
+        Map<String[], Classifier> classifierForFeatures = new HashMap<>();
+        classifierForFeatures.put(txt, classifiers.get(9));
+        classifierForFeatures.put(visual, classifiers.get(9));
+
+        classificationServiceAllFeatures
+            .makePredictionsForAllLocations("data/devset/predictions",
+                featureSets, classifierForFeatures);
+    }
+
+    @Test
+    public void testBuildModelsForAllLocations() {
+        String[] features = {"cm"};
+
+        classificationServiceAllFeatures.buildModelsForAllLocations(features, new RandomForest(), "data/devset/models");
+    }
+
+    @Test
+    public void testVotingClassifier() {
+        String[] features = {"cm"};
+
+        classificationServiceAllFeatures.voting("data/devset/models", "data/devset/features", features);
     }
 }

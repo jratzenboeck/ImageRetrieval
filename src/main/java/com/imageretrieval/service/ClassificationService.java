@@ -4,16 +4,15 @@ import com.imageretrieval.util.FileUtils;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.meta.FilteredClassifier;
+import weka.classifiers.meta.Vote;
 import weka.core.FastVector;
 import weka.core.Instances;
+import weka.core.SerializationHelper;
 import weka.core.converters.ArffLoader;
 import weka.filters.unsupervised.attribute.Remove;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class ClassificationService {
 
@@ -62,15 +61,31 @@ public class ClassificationService {
         }
     }
 
-    public void makePredictionsForAllLocations(String pathToPredictionsFolder, List<String[]> featureSets, Classifier classifier) {
+    public void buildModelsForAllLocations(String[] features, Classifier classifier, String pathToModels) {
         locationService
             .getAllLocationTitles()
             .forEach(locationId -> {
-                makePredictionsForLocation(pathToPredictionsFolder, locationId, featureSets, classifier);
+                buildModelForLocation(locationId, features, classifier, pathToModels);
             });
     }
 
-    public void makePredictionsForLocation(String pathToPredictionsFolder, String locationId, List<String[]> featureSets, Classifier classifier) {
+    private void buildModelForLocation(String locationId, String[] features, Classifier classifier, String pathToModels) {
+        final Instances instances = getInstancesFromArffFile(locationId, features);
+
+        if (instances != null) {
+            saveModel(classifier, instances, getFileNameForLocation(pathToModels, locationId, features, ".model"));
+        }
+    }
+
+    public void makePredictionsForAllLocations(String pathToPredictionsFolder, List<String[]> featureSets, Map<String[], Classifier> classifierForFeatures) {
+        locationService
+            .getAllLocationTitles()
+            .forEach(locationId -> {
+                makePredictionsForLocation(pathToPredictionsFolder, locationId, featureSets, classifierForFeatures);
+            });
+    }
+
+    public void makePredictionsForLocation(String pathToPredictionsFolder, String locationId, List<String[]> featureSets, Map<String[], Classifier> classifierForFeatures) {
         List<FastVector> predictions = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
 
@@ -78,7 +93,7 @@ public class ClassificationService {
             final Instances instances = getInstancesFromArffFile(locationId, features);
 
             if (instances != null) {
-                Evaluation results = classifyInstances(classifier, instances);
+                Evaluation results = classifyInstances(classifierForFeatures.get(features), instances);
 
                 if (results != null) {
                     sb = appendHeaderForPredictionFile(sb, features);
@@ -92,7 +107,7 @@ public class ClassificationService {
         String filename = getFileNameForLocationMerged(pathToPredictionsFolder, locationId, featureSets, ".csv");
         writeToFile(filename, mergePredictionFiles(sb, predictions));
         String baseFilename = filename.substring(0, filename.length() - 3);
-        FileUtils.convertCSVToArffFile(filename,  baseFilename + "arff", "");
+        FileUtils.convertCSVToArffFile(filename,  baseFilename + "arff");
     }
 
     private StringBuilder appendHeaderForPredictionFile(StringBuilder sb, String[] features) {
@@ -162,22 +177,75 @@ public class ClassificationService {
         return data;
     }
 
-    private Evaluation classifyInstances(Classifier classifier, Instances instances) {
+    public void saveModel(Classifier classifier, Instances instances, String filename) {
         try {
             Remove rm = new Remove();
             rm.setAttributeIndices("1");  // remove 1st attribute
-//            String[] options = new String[2];
-//            options[0] = "-p";
-//            options[1] = "1";
 
             FilteredClassifier fc = new FilteredClassifier();
             fc.setFilter(rm);
             fc.setClassifier(classifier);
-//            fc.setOptions(options);
             fc.buildClassifier(instances);
+            SerializationHelper.write(filename, fc);
+        } catch (Exception e) {
+            System.out.println("Classifier " + classifier.toString()
+                + " is not suitable for dataset and produced an error");
+        }
+    }
+
+    private Classifier readModel(String filename) {
+        try {
+            return (Classifier) SerializationHelper.read(new FileInputStream(filename));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private Classifier getModel(String pathToModels, String[] features, String locationId) {
+        return readModel(getFileNameForLocation(pathToModels, locationId, features, ".model"));
+    }
+
+    private Classifier[] getModels(String pathToModels, String[] features) {
+        Classifier[] classifiers = new Classifier[30];
+
+        for (int i = 0; i < locationService.getAllLocationTitles().size(); i++) {
+            classifiers[i] = getModel(pathToModels, features, locationService.getAllLocationTitles().get(i));
+        }
+        return classifiers;
+    }
+
+    public void voting(String pathToModels, String pathToCombined, String[] features) {
+        Vote vote = new Vote();
+        vote.setClassifiers(getModels(pathToModels, features));
+        StringBuilder filename = new StringBuilder(pathToModels + "/");
+        Arrays.stream(features).forEach(filename::append);
+
+        StringBuilder sb = new StringBuilder(pathToCombined + "/");
+        Arrays.stream(features).forEach(sb::append);
+        String arffFile = sb.toString() + "_combined.arff";
+        Evaluation evaluation = classifyInstances(vote, FileUtils.readArffFile(arffFile));
+        System.out.println(evaluation.toSummaryString());
+    }
+
+    private Evaluation classifyInstances(Classifier classifier, Instances instances) {
+        try {
+//            Remove rm = new Remove();
+//            rm.setAttributeIndices("1");  // remove 1st attribute
+//            String[] options = new String[2];
+//            options[0] = "-p";
+//            options[1] = "1";
+
+//            FilteredClassifier fc = new FilteredClassifier();
+//            fc.setFilter(rm);
+//            fc.setClassifier(classifier);
+//            fc.setOptions(options);
+            instances.setClassIndex(instances.numAttributes() - 1);
+            classifier.buildClassifier(instances);
 
             final Evaluation evaluation = new Evaluation(instances);
-            evaluation.crossValidateModel(fc, instances, 10, new Random(1));
+
+            evaluation.crossValidateModel(classifier, instances, 10, new Random(1));
 
             return evaluation;
         } catch (Exception e) {

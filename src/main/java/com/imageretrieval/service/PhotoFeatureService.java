@@ -3,9 +3,11 @@ package com.imageretrieval.service;
 import com.imageretrieval.entity.Photo;
 import com.imageretrieval.entity.TermScore;
 import com.imageretrieval.util.FileUtils;
+import weka.core.Instances;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.*;
 
@@ -19,45 +21,92 @@ public class PhotoFeatureService {
         this.locationService = locationService;
     }
 
-    public void writePhotoFeaturesForAllLocations(String pathToFolder, String[] features) {
+//    public void writePhotoFeaturesForAllLocations(String pathToFolder, String[] features) {
+//        locationService.getAllLocationTitles()
+//            .forEach(locationTitle -> {
+//                writePhotoFeaturesForOneLocation(pathToFolder, locationTitle, features);
+//                System.out.println("ARFF file written for location " + locationTitle);
+//            });
+//    }
+
+    public void writePhotoFeaturesForAllLocationsToOneFile(String pathToFolder, String[] features) {
+        StringBuilder filename = new StringBuilder();
+        filename.append(pathToFolder + "/");
+        Arrays.stream(features).forEach(filename::append);
+
+        String csvFile = filename.toString() + "_combined.csv";
+        writeVSHeadersToCSVFile(csvFile, features);
+
         locationService.getAllLocationTitles()
             .forEach(locationTitle -> {
-                writePhotoFeaturesForOneLocation(pathToFolder, locationTitle, features);
+                writePhotoFeaturesForOneLocation(locationTitle, features, csvFile);
+                System.out.println("ARFF file written for location " + locationTitle);
+            });
+
+        FileUtils.convertCSVToArffFile(csvFile, filename.toString() + "_combined.arff");
+    }
+
+    public void removeIdAttributeOfAllLocations(String pathToFolder, String[] features) {
+        locationService.getAllLocationTitles()
+            .forEach(locationTitle -> {
+                removeIdAttributeForOneLocation(pathToFolder, locationTitle, features);
                 System.out.println("ARFF file written for location " + locationTitle);
             });
     }
 
-    public void writePhotoFeaturesForOneLocation(String pathToFolder, String locationId, String[] features) {
+    private void removeIdAttributeForOneLocation(String pathToFolder, String locationId, String[] features) {
+        String filename = getBaseFilenameForLocationAndFeatures(pathToFolder, locationId, features);
+        Instances data = FileUtils.readArffFile(filename + ".arff");
+        FileUtils.writeToArffFile(FileUtils.removeFirstAttribute(data), filename + "_new.arff");
+    }
+
+    public void writePhotoFeaturesForOneLocation(String locationId, String[] features, String csvFile) {
+        writePhotoFeaturesToCSVFile(csvFile, locationId, features, true);
+        //FileUtils.convertCSVToArffFile(csvFile, filename.toString() + "_combined.arff");
+    }
+
+    private String getBaseFilenameForLocationAndFeatures(String pathToFolder, String locationId, String[] features) {
         StringBuilder filename = new StringBuilder();
         filename.append(pathToFolder + "/");
         Arrays.stream(features).forEach(filename::append);
         filename.append("/");
         filename.append(locationId);
         Arrays.stream(features).forEach(featureName -> filename.append("_" + featureName));
-
-        String csvFile = filename + ".csv";
-        writePhotoFeaturesToCSVFile(csvFile, locationId, features);
-        FileUtils.convertCSVToArffFile(csvFile, filename + ".arff", "first");
+        return filename.toString();
     }
 
-    private void writePhotoFeaturesToCSVFile(String filename, String locationId, String[] features) {
+    private void writeHeadersToCSVFile(String filename, String locationId, String[] features) {
         Map<String, TermScore> locationTermScores = locationService.getTextDescriptorsForEntity(locationId);
-        List<Photo> photos = getPhotosExpandedWithFeatures(locationId);
-
-        try {
-            PrintWriter printWriter = new PrintWriter(new File(filename));
-
+        try(PrintWriter printWriter = new PrintWriter(new File(filename))) {
             StringBuilder sbHeader = writeHeadersToStringBuilder(locationTermScores, features);
             printWriter.write(sbHeader.toString());
+        }
+        catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void writeVSHeadersToCSVFile(String filename, String[] features) {
+        try(PrintWriter printWriter = new PrintWriter(new File(filename))) {
+            StringBuilder sbHeader = writeVSDescriptorHeadersToStringBuilder(features);
+            printWriter.write(sbHeader.toString());
+        }
+        catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void writePhotoFeaturesToCSVFile(String filename, String locationId, String[] features, boolean appendToFile) {
+        List<Photo> photos = getPhotosExpandedWithFeatures(locationId);
+
+        try(PrintWriter printWriter = new PrintWriter(new FileOutputStream(new File(filename), appendToFile))) {
 
             for (int i = 0; i < photos.size(); i++) {
                 Photo photo = photos.get(i);
                 StringBuilder sb = writeFeaturesOfPhotoToStringBuilder(photo, features);
 
+                printWriter.write('\n');
                 printWriter.write(sb.toString());
-                if (i < photos.size() - 1) {
-                    printWriter.write('\n');
-                }
             }
             printWriter.close();
         } catch (FileNotFoundException e) {
@@ -81,7 +130,23 @@ public class PhotoFeatureService {
                 appendFeatureHeader(sbHeader, featureName, featureSize);
             }
         }
-        sbHeader.append("divGroundTruth\n");
+        sbHeader.append("groundTruth\n");
+        return sbHeader;
+    }
+
+    private StringBuilder writeVSDescriptorHeadersToStringBuilder(String[] features) {
+        Map<String, Integer> visualFeatureMap = getVisualFeatureDetails();
+
+        StringBuilder sbHeader = new StringBuilder();
+        sbHeader.append("id,");
+
+        for (String featureName : features) {
+            Integer featureSize = visualFeatureMap.get(featureName);
+            if (featureSize != null) {
+                appendFeatureHeader(sbHeader, featureName, featureSize);
+            }
+        }
+        sbHeader.append("groundTruth");
         return sbHeader;
     }
 
@@ -122,7 +187,7 @@ public class PhotoFeatureService {
                 photo.getHog().forEach(x -> sb.append(x + ","));
         }
 
-        sb.append(photo.getDivGroundTruth());
+        sb.append(photo.getRelGroundTruth());
         return sb;
     }
 
