@@ -92,7 +92,7 @@ public class ClassificationService {
         String filename = getFileNameForLocationMerged(pathToPredictionsFolder, locationId, featureSets, ".csv");
         writeToFile(filename, mergePredictionFiles(sb, predictions));
         String baseFilename = filename.substring(0, filename.length() - 3);
-        FileUtils.convertCSVToArffFile(filename,  baseFilename + "arff", "");
+        FileUtils.convertCSVToArffFile(filename,  baseFilename + "arff");
     }
 
     private StringBuilder appendHeaderForPredictionFile(StringBuilder sb, String[] features) {

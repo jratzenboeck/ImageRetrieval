@@ -33,21 +33,22 @@ public class PhotoFeatureService {
         Arrays.stream(features).forEach(filename::append);
         filename.append("/");
         filename.append(locationId);
+        filename.append("-");
         Arrays.stream(features).forEach(featureName -> filename.append("_" + featureName));
 
         String csvFile = filename + ".csv";
         writePhotoFeaturesToCSVFile(csvFile, locationId, features);
-        FileUtils.convertCSVToArffFile(csvFile, filename + ".arff", "first");
+//        FileUtils.convertCSVToArffFile(csvFile, filename + ".arff");
     }
 
     private void writePhotoFeaturesToCSVFile(String filename, String locationId, String[] features) {
-        Map<String, TermScore> locationTermScores = locationService.getTextDescriptorsForEntity(locationId);
+//        Map<String, TermScore> locationTermScores = locationService.getTextDescriptorsForEntity(locationId);
         List<Photo> photos = getPhotosExpandedWithFeatures(locationId);
 
         try {
             PrintWriter printWriter = new PrintWriter(new File(filename));
 
-            StringBuilder sbHeader = writeHeadersToStringBuilder(locationTermScores, features);
+            StringBuilder sbHeader = writeHeadersToStringBuilder(null, features);
             printWriter.write(sbHeader.toString());
 
             for (int i = 0; i < photos.size(); i++) {
@@ -72,16 +73,17 @@ public class PhotoFeatureService {
         sbHeader.append("id,");
 
         for (String featureName : features) {
-            if (featureName.equals("txt")) {
-                locationTermScores.keySet()
-                    .forEach(header -> sbHeader.append(header + ","));
-            }
+//            if (featureName.equals("txt")) {
+//                locationTermScores.keySet()
+//                    .forEach(header -> sbHeader.append(header + ","));
+//            }
             Integer featureSize = visualFeatureMap.get(featureName);
             if (featureSize != null) {
                 appendFeatureHeader(sbHeader, featureName, featureSize);
             }
         }
-        sbHeader.append("divGroundTruth\n");
+        sbHeader.append('\n');
+//        sbHeader.append("groundTruth\n");
         return sbHeader;
     }
 
@@ -98,6 +100,11 @@ public class PhotoFeatureService {
     private StringBuilder appendFeatureHeader(StringBuilder sb, String featureName, int featureSize) {
         for (int i = 0; i < featureSize; i++) {
             sb.append(featureName + i + ",");
+//            if (i == featureSize - 1) {
+//                sb.append(featureName + i);
+//            } else {
+//                sb.append(featureName + i + ",");
+//            }
         }
         return sb;
     }
@@ -122,7 +129,7 @@ public class PhotoFeatureService {
                 photo.getHog().forEach(x -> sb.append(x + ","));
         }
 
-        sb.append(photo.getDivGroundTruth());
+//        sb.append("?");
         return sb;
     }
 
@@ -135,8 +142,8 @@ public class PhotoFeatureService {
         Map<String, List<Double>> hogForPhotos = photoService.getHOGForPhotos(locationId);
 
         for (Photo photo : photos) {
-            List<TermScore> tfIdfVector = getTermScoresForPhoto(locationId, photo.getId(), photos.size());
-            photo.setTermScores(tfIdfVector);
+//            List<TermScore> tfIdfVector = getTermScoresForPhoto(locationId, photo.getId(), photos.size());
+//            photo.setTermScores(tfIdfVector);
             photo.setColorNames(colorNamesForPhotos.get(photo.getId()));
             photo.setColorMomentsHSV(colorMomentsHSVForPhotos.get(photo.getId()));
             photo.setColorStructureDescriptors(colorStructureDescriptorsForPhotos.get(photo.getId()));

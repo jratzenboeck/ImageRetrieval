@@ -7,13 +7,13 @@ import java.util.Arrays;
 public class PhotoFeatureServiceTest {
 
     private final PhotoService photoService = new PhotoService(
-        "data/devset/desctxt/devset_textTermsPerImage.txt",
-        "data/devset/xml",
-        "data/devset/gt/rGT", "data/devset/gt/dGT", "data/devset/descvis/img");
+        "data/testset/desctxt/devset_textTermsPerImage.txt",
+        "data/testset/xml",
+        "data/devset/gt/rGT", "data/devset/gt/dGT", "data/testset/descvis/img");
     private final LocationService locationService = new LocationService(
-        "data/devset/poiNameCorrespondences.txt",
+        "data/testset/poiNameCorrespondences.txt",
         "data/devset/desctxt/devset_textTermsPerPOI.wFolderNames.txt",
-        "data/devset/devset_topics.xml");
+        "data/testset/testset_topics.xml");
 
     private final PhotoFeatureService photoFeatureService =
         new PhotoFeatureService(photoService, locationService);
@@ -53,7 +53,7 @@ public class PhotoFeatureServiceTest {
     @Test
     public void testWriteVisualDescriptorsForAllLocations() {
         String[] features = new String[] { "cnn", "cm", "csd", "lbp", "hog" };
-        photoFeatureService.writePhotoFeaturesForAllLocations("data/devset/features", features);
+        photoFeatureService.writePhotoFeaturesForAllLocations("data/testset/features", features);
     }
 
     @Test
@@ -70,8 +70,8 @@ public class PhotoFeatureServiceTest {
 
     @Test
     public void testWriteColorMomentsFeatureForOneLocation() {
-        String[] features = new String[] { "cm" };
-        photoFeatureService.writePhotoFeaturesForOneLocation("data/devset/featuresOneLocation", "acropolis_athens", features);
+        String[] features = new String[] { "cnn", "cm", "csd", "lbp", "hog" };
+        photoFeatureService.writePhotoFeaturesForOneLocation("data/testset/featuresOneLocation", "bath_abbey", features);
     }
 
     @Test

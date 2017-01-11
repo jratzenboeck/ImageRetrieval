@@ -40,8 +40,8 @@ public class PhotoService extends AbstractService {
                 @Override
                 public XmlParsable buildObject(Element xmlElement) {
                     Photo photo = new Photo(xmlElement);
-                    photo.setRelGroundTruth(getRelGroundTruthValueForPhoto(locationId, photo.getId()));
-                    photo.setDivGroundTruth(getDivGroundTruthValueForPhoto(locationId, photo.getId()));
+//                    photo.setRelGroundTruth(0);
+//                    photo.setDivGroundTruth(0);
                     return photo;
                 }
 

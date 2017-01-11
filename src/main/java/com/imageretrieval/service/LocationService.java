@@ -57,7 +57,7 @@ public class LocationService extends AbstractService {
         return locationTitle;
     }
 
-    private Location getLocationByUniqueTitle(String uniqueTitle) {
+    public Location getLocationByUniqueTitle(String uniqueTitle) {
         Document xmlDocument = parseXmlDocument();
         Element root = xmlDocument.getRootElement();
 
