@@ -3,8 +3,15 @@ package com.imageretrieval.util;
 import com.imageretrieval.entity.Photo;
 import com.imageretrieval.entity.Prediction;
 import weka.classifiers.trees.RandomForest;
+import weka.clusterers.ClusterEvaluation;
+import weka.clusterers.Cobweb;
+import weka.clusterers.SimpleKMeans;
+import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.converters.CSVLoader;
+import weka.filters.Filter;
+import weka.filters.unsupervised.attribute.Remove;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -17,6 +24,7 @@ import java.util.List;
 public class Predictor {
 
     private RandomForest tree;
+    private SimpleKMeans kMeans;
     private Instances trainingData;
 
     BufferedReader reader;
@@ -40,9 +48,20 @@ public class Predictor {
         List<Prediction> predictions = new ArrayList<>();
         String line;
         String cvsSplitBy = ",";
-
         try (BufferedReader br = new BufferedReader(new FileReader(path+testFile))) {
             boolean first = true;
+
+            CSVLoader loader = new CSVLoader();
+            loader.setFile(new File(path+testFile));
+            Instances structure = loader.getStructure();
+            for (int i=0;i<structure.numAttributes();i++) {
+                Attribute attribute = structure.attribute(i);
+                Attribute newAttr = new Attribute(attribute.name(),Attribute.NUMERIC);
+                structure.deleteAttributeAt(i);
+                structure.insertAttributeAt(newAttr, i);
+            }
+            structure.delete();
+
             while ((line = br.readLine()) != null) {
                 String[] features = line.split(cvsSplitBy);
                 if (!first) {
@@ -54,15 +73,20 @@ public class Predictor {
                             instance.setValue(i, Double.valueOf(features[i]));
                         }
                     }
+                    structure.add(instance);
                     try {
                         double similarityScore = tree.distributionForInstance(instance)[1];
-                        predictions.add(new Prediction(photoId,similarityScore,0));
+                        predictions.add(new Prediction(instance, photoId,similarityScore,0));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 } else {
                     first = false;
                 }
+            }
+            int[] assignments = clustering(structure);
+            for (int i=0; i<assignments.length; i++) {
+                predictions.get(i).setCluster(assignments[i]);
             }
             predictions.sort(new Comparator<Prediction>() {
                 @Override
@@ -71,8 +95,26 @@ public class Predictor {
                 }
             });
             writeToFile(predictions.subList(0,50), queryId);
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private int[] clustering (Instances instances) {
+        try {
+            kMeans = new SimpleKMeans();
+            String[] options = new String[1];
+            options[0] = "-O";
+            kMeans.setOptions(options);
+            kMeans.setNumClusters(10);
+            kMeans.buildClusterer(instances);
+            ClusterEvaluation eval = new ClusterEvaluation();
+            eval.setClusterer(kMeans);
+            eval.evaluateClusterer(instances);
+            return kMeans.getAssignments();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new int[0];
         }
     }
 
