@@ -7,6 +7,7 @@ import weka.clusterers.SimpleKMeans;
 import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.ManhattanDistance;
 import weka.core.converters.CSVLoader;
 
 import java.io.*;
@@ -128,6 +129,7 @@ public class Predictor {
             String[] options = new String[1];
             options[0] = "-O";
             kMeans.setOptions(options);
+            kMeans.setDistanceFunction(new ManhattanDistance());
             kMeans.setNumClusters(NUMBER_OF_CLUSTERS);
             kMeans.buildClusterer(instances);
             ClusterEvaluation eval = new ClusterEvaluation();
