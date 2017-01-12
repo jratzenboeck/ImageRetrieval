@@ -1,17 +1,13 @@
 package com.imageretrieval.util;
 
-import com.imageretrieval.entity.Photo;
 import com.imageretrieval.entity.Prediction;
 import weka.classifiers.trees.RandomForest;
 import weka.clusterers.ClusterEvaluation;
-import weka.clusterers.Cobweb;
 import weka.clusterers.SimpleKMeans;
 import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.CSVLoader;
-import weka.filters.Filter;
-import weka.filters.unsupervised.attribute.Remove;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -26,6 +22,8 @@ public class Predictor {
     private RandomForest tree;
     private SimpleKMeans kMeans;
     private Instances trainingData;
+    private static final int NUMBER_OF_CLUSTERS = 10;
+    private static final int MIN_INSTANCES_PER_CLUSTER = 5;
 
     BufferedReader reader;
 
@@ -88,13 +86,37 @@ public class Predictor {
             for (int i=0; i<assignments.length; i++) {
                 predictions.get(i).setCluster(assignments[i]);
             }
-            predictions.sort(new Comparator<Prediction>() {
+            List<List<Prediction>> listOfPredictedClusters = new ArrayList<>();
+
+            for (int i = 0; i < NUMBER_OF_CLUSTERS; i++) { // iterate over number of cluster
+                List<Prediction> predictionsPerCluster = new ArrayList<>();
+                for (Prediction p : predictions) {
+                    if (p.getCluster() == i) {
+                        predictionsPerCluster.add(p);
+                    }
+                }
+                predictionsPerCluster.sort(new Comparator<Prediction>() {
+                    @Override
+                    public int compare(Prediction prediction, Prediction t1) {
+                        return -((Double) prediction.getSimilarityScore()).compareTo(t1.getSimilarityScore());
+                    }
+                });
+                listOfPredictedClusters.add(predictionsPerCluster.subList(0, MIN_INSTANCES_PER_CLUSTER));
+            }
+            List<Prediction> finalPredictions = new ArrayList<>();
+            for (int i = 0; i < MIN_INSTANCES_PER_CLUSTER; i++) {
+                for (int j = 0; j < NUMBER_OF_CLUSTERS; j++) {
+                    finalPredictions.add(listOfPredictedClusters.get(j).get(i));
+                }
+            }
+            finalPredictions.sort(new Comparator<Prediction>() {
                 @Override
                 public int compare(Prediction prediction, Prediction t1) {
-                    return -((Double)prediction.getSimilarityScore()).compareTo(t1.getSimilarityScore());
+                    return -((Double) prediction.getSimilarityScore()).compareTo(t1.getSimilarityScore());
                 }
             });
-            writeToFile(predictions.subList(0,50), queryId);
+            writeToFile(finalPredictions, queryId);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -106,7 +128,7 @@ public class Predictor {
             String[] options = new String[1];
             options[0] = "-O";
             kMeans.setOptions(options);
-            kMeans.setNumClusters(10);
+            kMeans.setNumClusters(NUMBER_OF_CLUSTERS);
             kMeans.buildClusterer(instances);
             ClusterEvaluation eval = new ClusterEvaluation();
             eval.setClusterer(kMeans);
