@@ -27,13 +27,13 @@ public class PredictorTest {
     @Test
     public void predictAll() throws Exception {
         Predictor predictor = new Predictor();
-        predictor.createClassifier("data/devset/predictor_test/cnncmcsdlbphog_combined.arff");
-        File dir = new File("data/testset/features/cnncmcsdlbphog/");
+        predictor.createClassifier("data/devset/predictor_test/cnncmcsdlbphogglrlm_combined.arff");
+        File dir = new File("data/testset/features/cnncmcsdlbphogglrlm/");
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
             for (File child : directoryListing) {
                 String locationUniqueTitle = child.getName().split("-")[0];
-                predictor.predict("data/testset/features/cnncmcsdlbphog/",
+                predictor.predict("data/testset/features/cnncmcsdlbphogglrlm/",
                     child.getName(),
                     locationService.getLocationByUniqueTitle(locationUniqueTitle).getQueryId());
             }

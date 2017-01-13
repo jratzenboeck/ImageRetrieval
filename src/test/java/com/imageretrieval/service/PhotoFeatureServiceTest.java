@@ -52,7 +52,7 @@ public class PhotoFeatureServiceTest {
 
     @Test
     public void testWriteVisualDescriptorsForAllLocations() {
-        String[] features = new String[] { "cnn", "cm", "csd", "lbp", "hog" };
+        String[] features = new String[] { "cnn", "cm", "csd", "lbp", "hog", "glrlm" };
         photoFeatureService.writePhotoFeaturesForAllLocations("data/testset/features", features);
     }
 
@@ -70,7 +70,7 @@ public class PhotoFeatureServiceTest {
 
     @Test
     public void testWriteColorMomentsFeatureForOneLocation() {
-        String[] features = new String[] { "cnn", "cm", "csd", "lbp", "hog" };
+        String[] features = new String[] { "cnn", "cm", "csd", "lbp", "hog", "glrlm" };
         photoFeatureService.writePhotoFeaturesForOneLocation("data/testset/featuresOneLocation", "bath_abbey", features);
     }
 

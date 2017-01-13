@@ -93,17 +93,13 @@ public class PhotoFeatureService {
         featureMap.put("csd", 64);
         featureMap.put("lbp", 16);
         featureMap.put("hog", 81);
+        featureMap.put("glrlm", 144);
         return featureMap;
     }
 
     private StringBuilder appendFeatureHeader(StringBuilder sb, String featureName, int featureSize) {
         for (int i = 0; i < featureSize; i++) {
             sb.append(featureName + i + ",");
-//            if (i == featureSize - 1) {
-//                sb.append(featureName + i);
-//            } else {
-//                sb.append(featureName + i + ",");
-//            }
         }
         return sb;
     }
@@ -127,7 +123,7 @@ public class PhotoFeatureService {
             if (featureName.equals("hog"))
                 photo.getHog().forEach(x -> sb.append(x + ","));
             if (featureName.equals("glrlm"))
-                photo.getHog().forEach(x -> sb.append(x + ","));
+                photo.getGlrlm().forEach(x -> sb.append(x + ","));
         }
 
         return sb;

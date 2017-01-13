@@ -1,7 +1,12 @@
 package com.imageretrieval.util;
 
 import com.imageretrieval.entity.Prediction;
+import weka.classifiers.Classifier;
+import weka.classifiers.lazy.IBk;
+import weka.classifiers.meta.AdaBoostM1;
+import weka.classifiers.meta.Bagging;
 import weka.classifiers.meta.FilteredClassifier;
+import weka.classifiers.meta.Vote;
 import weka.classifiers.trees.RandomForest;
 import weka.clusterers.ClusterEvaluation;
 import weka.clusterers.SimpleKMeans;
@@ -21,13 +26,13 @@ import java.util.List;
  */
 public class Predictor {
 
-    private RandomForest tree;
+    private Vote classifier;
     private SimpleKMeans kMeans;
     private Instances trainingData;
     private static final int NUMBER_OF_CLUSTERS = 10;
     private static final int MIN_INSTANCES_PER_CLUSTER = 5;
 
-    BufferedReader reader;
+    private BufferedReader reader;
 
     public void createClassifier(String trainingFile) {
         try {
@@ -39,14 +44,16 @@ public class Predictor {
             if (trainingData.classIndex() == -1)
                 trainingData.setClassIndex(trainingData.numAttributes() - 1);
 
-            tree = new RandomForest();
+            Classifier[] baseClassifiers = new Classifier[] {new RandomForest(), new IBk(), new AdaBoostM1(), new Bagging()};
+            classifier = new Vote();
+            classifier.setClassifiers(baseClassifiers);
 
             Remove rm = new Remove();
             rm.setAttributeIndices("1");  // remove 1st attribute
 
             FilteredClassifier fc = new FilteredClassifier();
             fc.setFilter(rm);
-            fc.setClassifier(tree);
+            fc.setClassifier(classifier);
             fc.buildClassifier(trainingData);
         } catch (Exception e) {
             e.printStackTrace();
@@ -86,7 +93,7 @@ public class Predictor {
                     structure.add(instance);
 
                     try {
-                        double similarityScore = tree.distributionForInstance(instance)[1];
+                        double similarityScore = classifier.distributionForInstance(instance)[1];
                         predictions.add(new Prediction(instance, photoId, similarityScore, 0));
                     } catch (Exception e) {
                         e.printStackTrace();
