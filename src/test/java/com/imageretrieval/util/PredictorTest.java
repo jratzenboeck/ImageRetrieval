@@ -4,9 +4,6 @@ import com.imageretrieval.service.LocationService;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.List;
-
-import static org.junit.Assert.*;
 
 /**
  * Created by mada on 11.01.17.
@@ -21,7 +18,7 @@ public class PredictorTest {
     @Test
     public void predict() throws Exception {
         Predictor predictor = new Predictor();
-        predictor.createClassifier("data/predictor_test/cnncmcsdlbphog_combined.arff");
+        predictor.createClassifier("data/devset/predictor_test/cnncmcsdlbphog_combined.arff");
         predictor.predict("data/testset/featuresOneLocation/cnncmcsdlbphog/",
             "bath_abbey_cnn_cm_csd_lbp_hog.csv",
             locationService.getLocationByUniqueTitle("bath_abbey").getQueryId());
@@ -30,7 +27,7 @@ public class PredictorTest {
     @Test
     public void predictAll() throws Exception {
         Predictor predictor = new Predictor();
-        predictor.createClassifier("data/predictor_test/cnncmcsdlbphog_combined.arff");
+        predictor.createClassifier("data/devset/predictor_test/cnncmcsdlbphog_combined.arff");
         File dir = new File("data/testset/features/cnncmcsdlbphog/");
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {

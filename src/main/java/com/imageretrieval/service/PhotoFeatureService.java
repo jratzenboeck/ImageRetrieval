@@ -2,7 +2,6 @@ package com.imageretrieval.service;
 
 import com.imageretrieval.entity.Photo;
 import com.imageretrieval.entity.TermScore;
-import com.imageretrieval.util.FileUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -127,9 +126,10 @@ public class PhotoFeatureService {
                 photo.getLbp().forEach(x -> sb.append(x + ","));
             if (featureName.equals("hog"))
                 photo.getHog().forEach(x -> sb.append(x + ","));
+            if (featureName.equals("glrlm"))
+                photo.getHog().forEach(x -> sb.append(x + ","));
         }
 
-//        sb.append("?");
         return sb;
     }
 
@@ -140,6 +140,7 @@ public class PhotoFeatureService {
         Map<String, List<Double>> colorStructureDescriptorsForPhotos = photoService.getColorStructureDescriptorsForPhotos(locationId);
         Map<String, List<Double>> lbpForPhotos = photoService.getLBPForPhotos(locationId);
         Map<String, List<Double>> hogForPhotos = photoService.getHOGForPhotos(locationId);
+        Map<String, List<Double>> glrlmForPhotos = photoService.getGLRLMForPhotos(locationId);
 
         for (Photo photo : photos) {
 //            List<TermScore> tfIdfVector = getTermScoresForPhoto(locationId, photo.getId(), photos.size());
@@ -149,6 +150,7 @@ public class PhotoFeatureService {
             photo.setColorStructureDescriptors(colorStructureDescriptorsForPhotos.get(photo.getId()));
             photo.setLbp(lbpForPhotos.get(photo.getId()));
             photo.setHog(hogForPhotos.get(photo.getId()));
+            photo.setGlrlm(glrlmForPhotos.get(photo.getId()));
         }
         return photos;
     }

@@ -1,6 +1,7 @@
 package com.imageretrieval.util;
 
 import com.imageretrieval.entity.Prediction;
+import weka.classifiers.meta.FilteredClassifier;
 import weka.classifiers.trees.RandomForest;
 import weka.clusterers.ClusterEvaluation;
 import weka.clusterers.SimpleKMeans;
@@ -9,10 +10,10 @@ import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.ManhattanDistance;
 import weka.core.converters.CSVLoader;
+import weka.filters.unsupervised.attribute.Remove;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -34,10 +35,19 @@ public class Predictor {
                 new FileReader(trainingFile));
             trainingData = new Instances(reader);
             reader.close();
+
             if (trainingData.classIndex() == -1)
                 trainingData.setClassIndex(trainingData.numAttributes() - 1);
+
             tree = new RandomForest();
-            tree.buildClassifier(trainingData);
+
+            Remove rm = new Remove();
+            rm.setAttributeIndices("1");  // remove 1st attribute
+
+            FilteredClassifier fc = new FilteredClassifier();
+            fc.setFilter(rm);
+            fc.setClassifier(tree);
+            fc.buildClassifier(trainingData);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -47,15 +57,16 @@ public class Predictor {
         List<Prediction> predictions = new ArrayList<>();
         String line;
         String cvsSplitBy = ",";
-        try (BufferedReader br = new BufferedReader(new FileReader(path+testFile))) {
+
+        try (BufferedReader br = new BufferedReader(new FileReader(path + testFile))) {
             boolean first = true;
 
             CSVLoader loader = new CSVLoader();
-            loader.setFile(new File(path+testFile));
+            loader.setFile(new File(path + testFile));
             Instances structure = loader.getStructure();
-            for (int i=0;i<structure.numAttributes();i++) {
+            for (int i = 0; i < structure.numAttributes(); i++) {
                 Attribute attribute = structure.attribute(i);
-                Attribute newAttr = new Attribute(attribute.name(),Attribute.NUMERIC);
+                Attribute newAttr = new Attribute(attribute.name(), Attribute.NUMERIC);
                 structure.deleteAttributeAt(i);
                 structure.insertAttributeAt(newAttr, i);
             }
@@ -67,15 +78,16 @@ public class Predictor {
                     Instance instance = new Instance(features.length);
                     instance.setDataset(trainingData);
                     String photoId = features[0];
-                    for (int i = 0; i < features.length; i++) {
+                    for (int i = 1; i < features.length; i++) {
                         if (!features[i].isEmpty()) {
                             instance.setValue(i, Double.valueOf(features[i]));
                         }
                     }
                     structure.add(instance);
+
                     try {
                         double similarityScore = tree.distributionForInstance(instance)[1];
-                        predictions.add(new Prediction(instance, photoId,similarityScore,0));
+                        predictions.add(new Prediction(instance, photoId, similarityScore, 0));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -83,47 +95,44 @@ public class Predictor {
                     first = false;
                 }
             }
-            int[] assignments = clustering(structure);
-            for (int i=0; i<assignments.length; i++) {
-                predictions.get(i).setCluster(assignments[i]);
-            }
-            List<List<Prediction>> listOfPredictedClusters = new ArrayList<>();
 
-            for (int i = 0; i < NUMBER_OF_CLUSTERS; i++) { // iterate over number of cluster
-                List<Prediction> predictionsPerCluster = new ArrayList<>();
-                for (Prediction p : predictions) {
-                    if (p.getCluster() == i) {
-                        predictionsPerCluster.add(p);
-                    }
-                }
-                predictionsPerCluster.sort(new Comparator<Prediction>() {
-                    @Override
-                    public int compare(Prediction prediction, Prediction t1) {
-                        return -((Double) prediction.getSimilarityScore()).compareTo(t1.getSimilarityScore());
-                    }
-                });
-                listOfPredictedClusters.add(predictionsPerCluster.subList(0, MIN_INSTANCES_PER_CLUSTER));
-            }
-            List<Prediction> finalPredictions = new ArrayList<>();
-            for (int i = 0; i < MIN_INSTANCES_PER_CLUSTER; i++) {
-                for (int j = 0; j < NUMBER_OF_CLUSTERS; j++) {
-                    finalPredictions.add(listOfPredictedClusters.get(j).get(i));
-                }
-            }
-            finalPredictions.sort(new Comparator<Prediction>() {
-                @Override
-                public int compare(Prediction prediction, Prediction t1) {
-                    return -((Double) prediction.getSimilarityScore()).compareTo(t1.getSimilarityScore());
-                }
-            });
-            writeToFile(finalPredictions, queryId);
+            writeToFile(getFinalPredictions(predictions, structure), queryId);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private int[] clustering (Instances instances) {
+    private List<Prediction> getFinalPredictions(List<Prediction> predictionsAfterClassify, Instances instances) {
+        int[] assignments = clustering(instances, 1);
+
+        for (int i = 0; i < assignments.length; i++) {
+            predictionsAfterClassify.get(i).setCluster(assignments[i]);
+        }
+        List<List<Prediction>> listOfPredictedClusters = new ArrayList<>();
+
+        for (int i = 0; i < NUMBER_OF_CLUSTERS; i++) { // iterate over number of cluster
+            List<Prediction> predictionsPerCluster = new ArrayList<>();
+            for (Prediction p : predictionsAfterClassify) {
+                if (p.getCluster() == i) {
+                    predictionsPerCluster.add(p);
+                }
+            }
+            predictionsPerCluster.sort(new SimilarityComparator());
+            listOfPredictedClusters.add(predictionsPerCluster.subList(0, MIN_INSTANCES_PER_CLUSTER));
+        }
+        List<Prediction> finalPredictions = new ArrayList<>();
+        for (int i = 0; i < MIN_INSTANCES_PER_CLUSTER; i++) {
+            for (int j = 0; j < NUMBER_OF_CLUSTERS; j++) {
+                finalPredictions.add(listOfPredictedClusters.get(j).get(i));
+            }
+        }
+        finalPredictions.sort(new SimilarityComparator());
+
+        return finalPredictions;
+    }
+
+    private int[] clustering(Instances instances, int seed) {
         try {
             kMeans = new SimpleKMeans();
             String[] options = new String[1];
@@ -131,10 +140,17 @@ public class Predictor {
             kMeans.setOptions(options);
             kMeans.setDistanceFunction(new ManhattanDistance());
             kMeans.setNumClusters(NUMBER_OF_CLUSTERS);
+            kMeans.setSeed(seed);
             kMeans.buildClusterer(instances);
             ClusterEvaluation eval = new ClusterEvaluation();
             eval.setClusterer(kMeans);
             eval.evaluateClusterer(instances);
+
+            for (double clusterSize : kMeans.getClusterSizes()) {
+                if (clusterSize < MIN_INSTANCES_PER_CLUSTER) {
+                    clustering(instances, seed + 1);
+                }
+            }
             return kMeans.getAssignments();
         } catch (Exception e) {
             e.printStackTrace();
@@ -142,7 +158,7 @@ public class Predictor {
         }
     }
 
-    private String getEntryForPredictionFile (Prediction prediction, int queryId) {
+    private String getEntryForPredictionFile(Prediction prediction, int queryId) {
         StringBuilder sb = new StringBuilder();
         sb.append(queryId + " ");
         sb.append(0 + " ");
@@ -156,8 +172,8 @@ public class Predictor {
     private void writeToFile(List<Prediction> predictionList, int queryId) {
         try {
             PrintWriter printWriter = new PrintWriter(
-                new FileOutputStream(new File("data/testset/predictions.csv"),true));
-            for (int i = 0; i <predictionList.size(); i++) {
+                new FileOutputStream(new File("data/testset/predictions.csv"), true));
+            for (int i = 0; i < predictionList.size(); i++) {
                 Prediction prediction = predictionList.get(i);
                 prediction.setRanking(i);
                 String p = getEntryForPredictionFile(prediction, queryId);
