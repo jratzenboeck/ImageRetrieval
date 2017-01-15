@@ -20,20 +20,25 @@ public class PredictorTest {
         Predictor predictor = new Predictor();
         predictor.createClassifier("data/devset/predictor_test/cnncmcsdlbphog_combined.arff");
         predictor.predict("data/testset/featuresOneLocation/cnncmcsdlbphog/",
-            "bath_abbey_cnn_cm_csd_lbp_hog.csv",
-            locationService.getLocationByUniqueTitle("bath_abbey").getQueryId());
+            "data/testset/featuresWikiOneLocation/cnncmcsdlbphog/","doge_s_palace",
+            "doge_s_palace-_cnn_cm_csd_lbp_hog.csv",
+            locationService.getLocationByUniqueTitle("doge_s_palace").getQueryId());
     }
 
     @Test
     public void predictAll() throws Exception {
         Predictor predictor = new Predictor();
-        predictor.createClassifier("data/devset/predictor_test/cnncmcsdlbphogglrlm_combined.arff");
-        File dir = new File("data/testset/features/cnncmcsdlbphogglrlm/");
+        predictor.createClassifier("data/devset/predictor_test/cnncmcsdlbp_combined.arff");
+
+        String pathToTest = "data/testset/features/cnncmcsdlbp/";
+
+        File dir = new File(pathToTest);
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
             for (File child : directoryListing) {
                 String locationUniqueTitle = child.getName().split("-")[0];
-                predictor.predict("data/testset/features/cnncmcsdlbphogglrlm/",
+                predictor.predict(pathToTest, "data/testset/featuresWiki/cnncmcsdlbp/",
+                    locationUniqueTitle,
                     child.getName(),
                     locationService.getLocationByUniqueTitle(locationUniqueTitle).getQueryId());
             }

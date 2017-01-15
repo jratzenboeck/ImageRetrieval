@@ -42,7 +42,7 @@ public class PhotoFeatureService {
 
     private void writePhotoFeaturesToCSVFile(String filename, String locationId, String[] features) {
 //        Map<String, TermScore> locationTermScores = locationService.getTextDescriptorsForEntity(locationId);
-        List<Photo> photos = getPhotosExpandedWithFeatures(locationId);
+        List<Photo> photos = getPhotosExpandedWithFeatures(locationId, false);
 
         try {
             PrintWriter printWriter = new PrintWriter(new File(filename));
@@ -53,7 +53,7 @@ public class PhotoFeatureService {
             for (int i = 0; i < photos.size(); i++) {
                 Photo photo = photos.get(i);
                 StringBuilder sb = writeFeaturesOfPhotoToStringBuilder(photo, features);
-
+//                String featureValues = sb.toString().substring(0, sb.toString().length() - 1);
                 printWriter.write(sb.toString());
                 if (i < photos.size() - 1) {
                     printWriter.write('\n');
@@ -93,13 +93,16 @@ public class PhotoFeatureService {
         featureMap.put("csd", 64);
         featureMap.put("lbp", 16);
         featureMap.put("hog", 81);
-        featureMap.put("glrlm", 144);
+        featureMap.put("glrlm", 44);
         return featureMap;
     }
 
     private StringBuilder appendFeatureHeader(StringBuilder sb, String featureName, int featureSize) {
         for (int i = 0; i < featureSize; i++) {
             sb.append(featureName + i + ",");
+//            if (i < featureSize - 1) {
+//                sb.append(",");
+//            }
         }
         return sb;
     }
@@ -125,12 +128,18 @@ public class PhotoFeatureService {
             if (featureName.equals("glrlm"))
                 photo.getGlrlm().forEach(x -> sb.append(x + ","));
         }
-
+//        sb.append("1");
         return sb;
     }
 
-    private List<Photo> getPhotosExpandedWithFeatures(String locationId) {
-        List<Photo> photos = photoService.getPhotosByLocation(locationId);
+    private List<Photo> getPhotosExpandedWithFeatures(String locationId, boolean wiki) {
+        List<Photo> photos;
+
+        if (wiki) {
+            photos = photoService.getWikipediaPhotos("data/testset/descvis/imgWiki/", locationId);
+        } else {
+            photos = photoService.getPhotosByLocation(locationId);
+        }
         Map<String, List<Double>> colorNamesForPhotos = photoService.getColorNamesForPhotos(locationId);
         Map<String, List<Double>> colorMomentsHSVForPhotos = photoService.getColorMomentsHSVForPhotos(locationId);
         Map<String, List<Double>> colorStructureDescriptorsForPhotos = photoService.getColorStructureDescriptorsForPhotos(locationId);

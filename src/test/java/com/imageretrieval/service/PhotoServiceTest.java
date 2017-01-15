@@ -34,4 +34,9 @@ public class PhotoServiceTest {
         Assert.assertEquals(195, termScores.size());
     }
 
+    @Test
+    public void testGetWikiImages() {
+        Assert.assertEquals(5, service.getWikipediaPhotos("data/testset/descvis/imgWiki/", "grand_palais").size());
+    }
+
 }

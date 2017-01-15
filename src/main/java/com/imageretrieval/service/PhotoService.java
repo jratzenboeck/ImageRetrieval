@@ -7,6 +7,7 @@ import org.dom4j.DocumentException;
 import org.dom4j.Element;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -40,8 +41,6 @@ public class PhotoService extends AbstractService {
                 @Override
                 public XmlParsable buildObject(Element xmlElement) {
                     Photo photo = new Photo(xmlElement);
-//                    photo.setRelGroundTruth(0);
-//                    photo.setDivGroundTruth(0);
                     return photo;
                 }
 
@@ -54,6 +53,17 @@ public class PhotoService extends AbstractService {
         } catch (DocumentException ex) {
             throw new IllegalArgumentException("XML processing failed for location title " + locationId);
         }
+    }
+
+    public List<Photo> getWikipediaPhotos(String pathToFolder, String locationId) {
+        List<Photo> wikiImages = new ArrayList<>();
+
+        try (Stream<String> lines = Files.lines(Paths.get(pathToFolder + locationId  + " CM.csv"), StandardCharsets.ISO_8859_1)) {
+            lines.map(line -> line.split(",")[0]).forEach(id -> wikiImages.add(new Photo(id)));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return wikiImages;
     }
 
     @Override
@@ -114,13 +124,18 @@ public class PhotoService extends AbstractService {
 
         Map<String, List<Double>> photosWithVisualDescriptor = new HashMap<>();
 
-        try (Stream<String> lines = Files.lines(Paths.get(filename))) {
+        try (Stream<String> lines = Files.lines(Paths.get(filename), StandardCharsets.ISO_8859_1)) {
             lines
                 .map(line -> line.split(","))
                 .forEach(descriptors -> {
                     List<Double> visualDescriptorValues = new ArrayList<>();
                     for (int i = 1; i < descriptors.length; i++) {
-                        visualDescriptorValues.add(Double.parseDouble(descriptors[i]));
+                        System.out.println(locationId);
+                        try {
+                            visualDescriptorValues.add(Double.parseDouble(descriptors[i]));
+                        } catch (NumberFormatException ex) {
+                            continue;
+                        }
                     }
                     photosWithVisualDescriptor.put(descriptors[0], visualDescriptorValues);
                 });

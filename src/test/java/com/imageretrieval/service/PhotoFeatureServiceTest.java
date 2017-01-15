@@ -52,14 +52,14 @@ public class PhotoFeatureServiceTest {
 
     @Test
     public void testWriteVisualDescriptorsForAllLocations() {
-        String[] features = new String[] { "cnn", "cm", "csd", "lbp", "hog", "glrlm" };
-        photoFeatureService.writePhotoFeaturesForAllLocations("data/testset/features", features);
+        String[] features = new String[] { "cnn", "cm", "csd", "lbp" };
+        photoFeatureService.writePhotoFeaturesForAllLocations("data/testset/featuresWiki", features);
     }
 
     @Test
     public void testWriteCnnCmCsdLbpForAllLocations() {
         String[] features = new String[] { "cnn", "cm", "csd", "lbp" };
-        photoFeatureService.writePhotoFeaturesForAllLocations("data/devset/features", features);
+        photoFeatureService.writePhotoFeaturesForAllLocations("data/testset/features", features);
     }
 
     @Test

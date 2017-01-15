@@ -59,4 +59,8 @@ public class Photo extends XmlParsable {
             xmlElement.attributeValue("userid"),
             Integer.valueOf(xmlElement.attributeValue("views")));
     }
+
+    public Photo(String id) {
+        this.id = id;
+    }
 }

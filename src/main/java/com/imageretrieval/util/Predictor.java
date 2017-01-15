@@ -21,9 +21,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by mada on 11.01.17.
- */
 public class Predictor {
 
     private Vote classifier;
@@ -34,11 +31,15 @@ public class Predictor {
 
     private BufferedReader reader;
 
-    public void createClassifier(String trainingFile) {
+    public Classifier createClassifier(String trainingFile) {
         try {
             reader = new BufferedReader(
                 new FileReader(trainingFile));
             trainingData = new Instances(reader);
+
+            for (int i = 0; i < trainingData.numInstances(); i++) {
+                trainingData.instance(i).setWeight(1);
+            }
             reader.close();
 
             if (trainingData.classIndex() == -1)
@@ -48,28 +49,55 @@ public class Predictor {
             classifier = new Vote();
             classifier.setClassifiers(baseClassifiers);
 
-            Remove rm = new Remove();
-            rm.setAttributeIndices("1");  // remove 1st attribute
+            return classifier;
 
-            FilteredClassifier fc = new FilteredClassifier();
-            fc.setFilter(rm);
-            fc.setClassifier(classifier);
-            fc.buildClassifier(trainingData);
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return null;
     }
 
-    public void predict(String path, String testFile, int queryId) {
+    private Instances getWikiInstances(String path, String locationTitle) throws Exception {
+        CSVLoader loader = new CSVLoader();
+//        String[] options = new String[1];
+//        options[0] = "-H";
+//        loader.setOptions(options);
+        loader.setSource(new File(path + locationTitle + "-_cnn_cm_csd_lbp.csv"));
+        return loader.getDataSet();
+    }
+
+    private void extendTrainingData(String path, String locationTitle) throws Exception {
+        Instances wikiInstances = getWikiInstances(path, locationTitle);
+        for (int i = 0; i < wikiInstances.numInstances(); i++) {
+            wikiInstances.instance(i).setWeight(2);
+            trainingData.add(wikiInstances.instance(i));
+        }
+    }
+
+    private void buildFinalClassifier(String pathToWiki, String locationTitle) throws Exception {
+        extendTrainingData(pathToWiki, locationTitle);
+
+        Remove rm = new Remove();
+        rm.setAttributeIndices("1");  // remove 1st attribute
+
+        FilteredClassifier fc = new FilteredClassifier();
+        fc.setFilter(rm);
+        fc.setClassifier(classifier);
+        fc.buildClassifier(trainingData);
+    }
+
+    public void predict(String pathToTest, String pathWiki, String locationTitle, String testFile, int queryId) {
         List<Prediction> predictions = new ArrayList<>();
         String line;
         String cvsSplitBy = ",";
 
-        try (BufferedReader br = new BufferedReader(new FileReader(path + testFile))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(pathToTest + testFile))) {
+            buildFinalClassifier(pathWiki, locationTitle);
+
             boolean first = true;
 
             CSVLoader loader = new CSVLoader();
-            loader.setFile(new File(path + testFile));
+            loader.setFile(new File(pathToTest + testFile));
             Instances structure = loader.getStructure();
             for (int i = 0; i < structure.numAttributes(); i++) {
                 Attribute attribute = structure.attribute(i);
@@ -104,8 +132,10 @@ public class Predictor {
             }
 
             writeToFile(getFinalPredictions(predictions, structure), queryId);
+            System.out.println("Predictions written for location " + locationTitle);
 
         } catch (Exception e) {
+//            System.out.println("Exception happened for location " + locationTitle + ". " + e.getMessage());
             e.printStackTrace();
         }
     }
