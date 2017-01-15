@@ -1,9 +1,11 @@
 package com.imageretrieval.util;
 
+import com.imageretrieval.entity.Prediction;
 import com.imageretrieval.service.LocationService;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.*;
 
 /**
  * Created by mada on 11.01.17.
@@ -33,9 +35,19 @@ public class PredictorTest {
         String pathToTest = "data/testset/features/cnncmcsdlbp/";
 
         File dir = new File(pathToTest);
+        Map<Integer, List<Prediction>> predictions = new HashMap<>();
+
         File[] directoryListing = dir.listFiles();
+        List<File> files = Arrays.asList(directoryListing);
+        files.sort(new Comparator<File>() {
+            @Override
+            public int compare(File o1, File o2) {
+                return locationService.getLocationByUniqueTitle(o1.getName().split("-")[0]).getQueryId() -
+                    locationService.getLocationByUniqueTitle(o2.getName().split("-")[0]).getQueryId();
+            }
+        });
         if (directoryListing != null) {
-            for (File child : directoryListing) {
+            for (File child : files) {
                 String locationUniqueTitle = child.getName().split("-")[0];
                 predictor.predict(pathToTest, "data/testset/featuresWiki/cnncmcsdlbp/",
                     locationUniqueTitle,

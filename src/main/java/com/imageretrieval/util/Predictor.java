@@ -197,11 +197,11 @@ public class Predictor {
 
     private String getEntryForPredictionFile(Prediction prediction, int queryId) {
         StringBuilder sb = new StringBuilder();
-        sb.append(queryId + " ");
-        sb.append(0 + " ");
-        sb.append(prediction.getPhotoId() + " ");
-        sb.append(prediction.getRanking() + " ");
-        sb.append(prediction.getSimilarityScore() + " ");
+        sb.append(queryId + "\t");
+        sb.append(0 + "\t");
+        sb.append(prediction.getPhotoId() + "\t");
+        sb.append(prediction.getRanking() + "\t");
+        sb.append(prediction.getSimilarityScore() + "\t");
         sb.append("run1_group4");
         return sb.toString();
     }
